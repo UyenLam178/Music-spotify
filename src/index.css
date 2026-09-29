@@ -1,0 +1,376 @@
+:root {
+    --color-bg: #000000;
+    --color-bg-base: #121212;
+    --color-bg-elevated: #181818;
+    --color-bg-highlight: #282828;
+    --color-bg-highlight-hover: #3a3a3a;
+    --color-sidebar: #000000;
+    --color-green: #1db954;
+    --color-green-hover: #1ed760;
+    --color-text: #ffffff;
+    --color-text-subdued: #a7a7a7;
+    --color-text-bright: #ffffff;
+    --color-border: #2a2a2a;
+    --header-height: 64px;
+    --player-height: 90px;
+    --sidebar-width: 280px;
+    --radius-sm: 4px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    font-family: "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html,
+body,
+#root {
+    height: 100%;
+}
+
+body {
+    background: var(--color-bg);
+    color: var(--color-text);
+    -webkit-font-smoothing: antialiased;
+}
+
+a {
+    color: inherit;
+    text-decoration: none;
+}
+
+button {
+    font-family: inherit;
+    cursor: pointer;
+    border: none;
+    background: none;
+    color: inherit;
+}
+
+input,
+select,
+textarea {
+    font-family: inherit;
+    color: inherit;
+}
+
+ul {
+    list-style: none;
+}
+
+img {
+    display: block;
+    max-width: 100%;
+}
+
+::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+}
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
+    border: 3px solid transparent;
+    background-clip: content-box;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
+    background-clip: content-box;
+}
+
+/* ---------- Buttons ---------- */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-weight: 700;
+    font-size: 14px;
+    border-radius: 500px;
+    padding: 12px 32px;
+    transition: transform 0.1s ease, background 0.15s ease, opacity 0.15s ease;
+    white-space: nowrap;
+}
+.btn:active {
+    transform: scale(0.97);
+}
+.btn-primary {
+    background: var(--color-green);
+    color: #000;
+}
+.btn-primary:hover {
+    background: var(--color-green-hover);
+    transform: scale(1.03);
+}
+.btn-outline {
+    background: transparent;
+    color: var(--color-text);
+    border: 1px solid #5a5a5a;
+}
+.btn-outline:hover {
+    border-color: var(--color-text);
+    transform: scale(1.03);
+}
+.btn-ghost {
+    background: transparent;
+    color: var(--color-text-subdued);
+}
+.btn-ghost:hover {
+    color: var(--color-text);
+}
+.btn-sm {
+    padding: 8px 20px;
+    font-size: 13px;
+}
+.btn-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-text-subdued);
+}
+.btn-icon:hover {
+    color: var(--color-text);
+    transform: scale(1.06);
+}
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none !important;
+}
+
+/* ---------- Form controls ---------- */
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 16px;
+    text-align: left;
+}
+.field label {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--color-text);
+}
+.field input,
+.field select,
+.field textarea {
+    background: #121212;
+    border: 1px solid #878787;
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    font-size: 14px;
+    color: var(--color-text);
+    outline: none;
+}
+.field input:focus,
+.field select:focus,
+.field textarea:focus {
+    border-color: var(--color-text);
+}
+.field-error {
+    color: #f15e6c;
+    font-size: 12px;
+}
+.form-error-banner {
+    background: rgba(241, 94, 108, 0.12);
+    border: 1px solid #f15e6c;
+    color: #f15e6c;
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    font-size: 13px;
+    margin-bottom: 16px;
+}
+.form-success-banner {
+    background: rgba(29, 185, 84, 0.12);
+    border: 1px solid var(--color-green);
+    color: var(--color-green-hover);
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    font-size: 13px;
+    margin-bottom: 16px;
+}
+
+/* ---------- Layout ---------- */
+.app-shell {
+    display: grid;
+    grid-template-columns: var(--sidebar-width) 1fr;
+    grid-template-rows: 1fr var(--player-height);
+    height: 100vh;
+    gap: 8px;
+    padding: 8px 8px 0;
+    background: var(--color-bg);
+}
+.app-main-col {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0;
+    overflow: hidden;
+}
+.app-content {
+    flex: 1;
+    background: var(--color-bg-base);
+    border-radius: var(--radius-lg);
+    overflow-y: auto;
+    position: relative;
+}
+.app-player-row {
+    grid-column: 1 / -1;
+}
+
+.content-inner {
+    padding: 24px 32px 40px;
+}
+
+.section {
+    margin-bottom: 40px;
+}
+.section-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 16px;
+}
+.section-head h2 {
+    font-size: 22px;
+    font-weight: 700;
+}
+.section-head a {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--color-text-subdued);
+}
+.section-head a:hover {
+    color: var(--color-text);
+    text-decoration: underline;
+}
+
+.card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+    gap: 20px;
+}
+
+.circle-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 20px;
+}
+
+@media (max-width: 900px) {
+    .app-shell {
+        grid-template-columns: 1fr;
+    }
+}
+.language-switcher {
+    position: relative;
+    margin-top: auto;
+    padding: 12px 16px 16px;
+}
+
+.language-button {
+    width: 100%;
+    min-height: 42px;
+
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    padding: 10px 12px;
+
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 8px;
+
+    background: transparent;
+    color: inherit;
+
+    cursor: pointer;
+
+    font-size: 14px;
+
+    transition:
+            background 0.2s ease,
+            border-color 0.2s ease;
+}
+
+.language-button:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.language-icon {
+    font-size: 16px;
+}
+
+.language-arrow {
+    margin-left: auto;
+    font-size: 10px;
+    opacity: 0.7;
+}
+
+.language-menu {
+    position: absolute;
+
+    left: 16px;
+    right: 16px;
+    bottom: calc(100% - 4px);
+
+    z-index: 1000;
+
+    padding: 6px;
+
+    background: #282828;
+
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+
+    box-shadow:
+            0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+.language-option {
+    width: 100%;
+
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    padding: 10px 12px;
+
+    border: none;
+    border-radius: 6px;
+
+    background: transparent;
+    color: #ffffff;
+
+    font-size: 14px;
+    text-align: left;
+
+    cursor: pointer;
+}
+
+.language-option:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.language-option.active {
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.language-option.active::after {
+    content: "✓";
+
+    margin-left: auto;
+
+    opacity: 0.9;
+}

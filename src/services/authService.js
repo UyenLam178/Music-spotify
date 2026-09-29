@@ -1,0 +1,49 @@
+import api, { tokenStorage } from "./api";
+
+/**
+ * Khớp AuthController + AuthService trong class diagram:
+ *
+ *   AuthController: register / verifyOtp / login / forgotPassword / resetPassword
+ *   AuthService   : register(username, email, password)
+ *                   login(email, password): LoginResponse
+ *                   forgotPassword(email)
+ *                   resetPassword(email, otp, newPassword)
+ *
+ * OTP dùng một lần (OtpService.verifyAndConsume) nên:
+ *   - REGISTER       : gọi verifyOtp(email, otp) -> tài khoản UNVERIFIED -> ACTIVE
+ *   - RESET_PASSWORD : OTP được kiểm tra & tiêu thụ NGAY trong resetPassword(email, otp, newPassword)
+ *                      => không có bước verify riêng.
+ * Bảng endpoint đầy đủ: xem API_CONTRACT.md
+ */
+
+// UC01 Đăng ký -> backend tạo user (UNVERIFIED, role USER) và gửi OTP REGISTER qua email
+export const register = async ({ username, email, password }) => {
+    const { data } = await api.post("/auth/register", { username, email, password });
+    return data;
+};
+
+// UC02 Xác thực Email/OTP (dùng cho đăng ký). Sai/hết hạn OTP -> backend trả 4xx + message.
+export const verifyOtp = async ({ email, otp }) => {
+    const { data } = await api.post("/auth/verify-otp", { email, otp });
+    return data;
+};
+
+// UC03 Đăng nhập -> LoginResponse { token, userId, username, role }
+export const login = async ({ email, password }) => {
+    const { data } = await api.post("/auth/login", { email, password });
+    if (data?.token) tokenStorage.setToken(data.token);
+    return data;
+};
+
+// UC04 Quên mật khẩu -> backend gửi OTP RESET_PASSWORD tới email
+// (frontend cũng gọi lại hàm này để "Gửi lại mã")
+export const forgotPassword = async (email) => {
+    const { data } = await api.post("/auth/forgot-password", { email });
+    return data;
+};
+
+// UC05 Đặt lại mật khẩu (kèm OTP, bao gồm UC02)
+export const resetPassword = async ({ email, otp, newPassword }) => {
+    const { data } = await api.post("/auth/reset-password", { email, otp, newPassword });
+    return data;
+};
