@@ -32,9 +32,12 @@ export default function LoginForm() {
     setIsLoading(true);
     try {
       await login({ email: form.email.trim(), password: form.password });
+      // Xoá mật khẩu khỏi state ngay khi đăng nhập xong, không để nó nằm lại trong bộ nhớ
+      setForm({ email: "", password: "" });
       navigate("/");
     } catch (err) {
       setServerError(extractErrorMessage(err, t("login.invalidCredentials")));
+      setForm((f) => ({ ...f, password: "" }));
     } finally {
       setIsLoading(false);
     }

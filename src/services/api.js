@@ -1,5 +1,6 @@
 import axios from "axios";
 import i18n from "i18next";
+import { isTokenExpired } from "../utils/jwt";
 
 // ---------------------------------------------------------------------------
 // Axios instance dùng chung cho toàn bộ frontend.
@@ -32,7 +33,15 @@ const api = axios.create({
 // Gắn JWT vào mỗi request => JwtAuthenticationFilter ở backend đọc header này.
 api.interceptors.request.use((config) => {
     const token = tokenStorage.getToken();
-    if (token) config.headers.Authorization = `Bearer ${token}`;
+    if (token) {
+        // Token đã hết hạn (đọc "exp" trong payload) -> khỏi gửi lên server, xoá phiên luôn.
+        if (isTokenExpired(token)) {
+            tokenStorage.clear();
+            window.dispatchEvent(new CustomEvent("mw:auth-expired"));
+        } else {
+            config.headers.Authorization = `Bearer ${token}`;
+        }
+    }
     return config;
 });
 

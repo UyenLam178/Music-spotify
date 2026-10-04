@@ -7,6 +7,7 @@ import { validateEmail, validateOtp, LIMITS } from "../../utils/validators";
 import Button from "../Common/Button";
 import Field from "../Common/Field";
 import StatusBanner from "../Common/StatusBanner";
+import { maskEmail } from "../../utils/mask";
 
 // UC13 Cập nhật email (include UC02 Xác thực OTP, purpose CHANGE_EMAIL)
 //   Bước 1: nhập email mới -> backend kiểm tra chưa được dùng, gửi OTP tới email mới
@@ -72,7 +73,7 @@ export default function EmailSection() {
     <section className="profile-section">
       <h2>{t("profile.changeEmail")}</h2>
       <p className="sb-hint" style={{ marginBottom: 12 }}>
-        {t("profile.currentEmail")}: <strong>{user?.email}</strong>
+        {t("profile.currentEmail")}: <strong>{maskEmail(user?.email)}</strong>
       </p>
       <StatusBanner status={status} />
 

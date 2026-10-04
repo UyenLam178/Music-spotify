@@ -31,8 +31,12 @@ export const verifyOtp = async ({ email, otp }) => {
 // UC03 Đăng nhập -> LoginResponse { token, userId, username, role }
 export const login = async ({ email, password }) => {
     const { data } = await api.post("/auth/login", { email, password });
-    if (data?.token) tokenStorage.setToken(data.token);
-    return data;
+    if (!data?.token) throw new Error("Backend không trả về JWT (LoginResponse.token)");
+    tokenStorage.setToken(data.token);
+    // Không trả token ra ngoài: nơi gọi chỉ cần userId/username/role, tránh token
+    // lọt vào state React / log.
+    const { token: _token, ...safe } = data; // eslint-disable-line no-unused-vars
+    return safe;
 };
 
 // UC04 Quên mật khẩu -> backend gửi OTP RESET_PASSWORD tới email

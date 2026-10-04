@@ -8,6 +8,7 @@ import EmailSection from "../../components/Profile/EmailSection";
 import PasswordSection from "../../components/Profile/PasswordSection";
 import ArtistSection from "../../components/Profile/ArtistSection";
 import AccountSection from "../../components/Profile/AccountSection";
+import { maskEmail } from "../../utils/mask";
 
 // Trang Hồ sơ = nhóm use case "II. User" của module Người dùng:
 //   UC07/08 thông tin cá nhân · UC10 ảnh đại diện · UC13 email · UC09 mật khẩu
@@ -30,7 +31,7 @@ export default function Profile() {
                     </h1>
                     <p className="sb-hint">
                         {user?.username && `@${user.username} · `}
-                        {user?.email}
+                        {maskEmail(user?.email)}
                         {user?.role && <span className={`role-badge role-${user.role.toLowerCase()}`}>{t(`role.${user.role}`)}</span>}
                     </p>
                 </div>

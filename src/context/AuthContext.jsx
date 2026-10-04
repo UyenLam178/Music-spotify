@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useState } from "rea
 import * as authService from "../services/authService";
 import * as userService from "../services/userService";
 import { tokenStorage } from "../services/api";
+import { getTokenExpiryMs } from "../utils/jwt";
 
 const AuthContext = createContext(null);
 
@@ -38,6 +39,21 @@ export function AuthProvider({ children }) {
     window.addEventListener("mw:auth-expired", handleExpired);
     return () => window.removeEventListener("mw:auth-expired", handleExpired);
   }, [loadCurrentUser]);
+
+  // Hẹn giờ tự đăng xuất đúng lúc JWT hết hạn (không phải đợi request kế tiếp bị 401).
+  // Phụ thuộc vào `user`: login/logout thì token đổi nên hẹn lại.
+  useEffect(() => {
+    const token = tokenStorage.getToken();
+    const expMs = token ? getTokenExpiryMs(token) : null;
+    if (!user || expMs === null) return undefined;
+    // setTimeout tối đa ~24.8 ngày; chặn để tránh tràn số
+    const delay = Math.min(Math.max(expMs - Date.now(), 0), 2 ** 31 - 1);
+    const id = setTimeout(() => {
+      tokenStorage.clear();
+      setUser(null);
+    }, delay);
+    return () => clearTimeout(id);
+  }, [user]);
 
   // UC03: login -> lưu JWT -> tải hồ sơ đầy đủ
   const login = async (credentials) => {

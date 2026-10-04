@@ -21,7 +21,7 @@ export default function VerifyOtpForm() {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  const email = state?.email;
+  const email = state?.email || sessionStorage.getItem("pendingEmail");
   // Vào thẳng /verify-otp mà không đi qua Đăng ký -> không có email để xác thực
   if (!email) return <Navigate to="/register" replace />;
 
@@ -36,6 +36,7 @@ export default function VerifyOtpForm() {
     setIsLoading(true);
     try {
       await authService.verifyOtp({ email, otp: otp.trim() });
+      sessionStorage.removeItem("pendingEmail");
       navigate("/login", { state: { notice: "verified", email }, replace: true });
     } catch (err) {
       setError(extractErrorMessage(err, t("otp.failedDefault")));

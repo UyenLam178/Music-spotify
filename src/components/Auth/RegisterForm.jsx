@@ -45,6 +45,9 @@ export default function RegisterForm() {
       // RegisterRequest: chỉ gửi username, email, password (confirmPassword chỉ dùng ở UI)
       await register({ username: form.username.trim(), email, password: form.password });
       // Đăng ký -> Xác thực Email/OTP -> Hoàn tất đăng ký (đăng nhập)
+      // Lưu email ở sessionStorage (chỉ sống trong tab này) để F5 / mở lại tab
+      // vẫn không phải nhập lại. KHÔNG lưu mật khẩu.
+      sessionStorage.setItem("pendingEmail", email);
       navigate("/verify-otp", { state: { email } });
     } catch (err) {
       setServerError(extractErrorMessage(err, t("register.failedDefault")));
