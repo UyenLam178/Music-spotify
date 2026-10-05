@@ -1,24 +1,5 @@
 import api from "./api";
 
-/**
- * Khớp UserController + UserService trong class diagram.
- * Tất cả yêu cầu đã đăng nhập (JWT); backend lấy userId từ token nên
- * frontend KHÔNG gửi userId.
- *
- *   UC06 logout()
- *   UC07 getProfile()                                   -> User
- *   UC08 updateProfile(fullName)
- *   UC09 requestChangePasswordOtp(currentPassword)      -> gửi OTP CHANGE_PASSWORD
- *        changePassword(otp, newPassword)
- *   UC10 updateAvatar(file)
- *   UC13 requestUpdateEmailOtp(newEmail)                -> gửi OTP CHANGE_EMAIL tới email mới
- *        updateEmail(otp)
- *   UC11 disableAccount(currentPassword)                -> DISABLED
- *   UC12 deleteAccount(currentPassword)                 -> DELETED (xóa mềm)
- *   UC14 requestBecomeArtist(artistName, bio)           -> artistRequestStatus = PENDING
- *   UC19 updateArtistProfile(artistName, bio)           -> chỉ role ARTIST
- */
-
 // UC06
 export const logout = async () => {
     const { data } = await api.post("/users/logout");
@@ -56,7 +37,7 @@ export const requestChangePasswordOtp = async ({ currentPassword }) => {
 
 // UC09 bước 2: xác thực OTP + đặt mật khẩu mới
 export const changePassword = async ({ otp, newPassword }) => {
-    const { data } = await api.put("/users/password", { otp, newPassword });
+    const { data } = await api.put("/users/password", { otpCode: otp, newPassword });
     return data;
 };
 
@@ -68,7 +49,7 @@ export const requestUpdateEmailOtp = async ({ newEmail }) => {
 
 // UC13 bước 2: xác thực OTP -> đổi email (email mới đã lưu cùng OTP ở otp_verifications.new_email)
 export const updateEmail = async ({ otp }) => {
-    const { data } = await api.put("/users/email", { otp });
+    const { data } = await api.put("/users/email", { otpCode: otp });
     return data;
 };
 

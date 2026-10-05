@@ -1,14 +1,5 @@
 import api from "./api";
 
-/**
- * Khớp AdminController + AdminService (UC15-18). Backend gắn
- * @PreAuthorize("hasRole('ADMIN')") nên chỉ tài khoản ADMIN gọi được.
- *
- *   getAllUsers / lockAccount / unlockAccount
- *   getPendingArtistRequests / approveArtistRequest / rejectArtistRequest
- *   assignRole
- */
-
 // Backend có thể trả mảng thuần (List<User>) hoặc Page { content: [...] }
 const toList = (data) => (Array.isArray(data) ? data : data?.content || []);
 

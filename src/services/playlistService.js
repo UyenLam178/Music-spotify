@@ -1,9 +1,5 @@
 import api from "./api";
 
-/**
- * Map theo DTO: CreatePlaylistRequest, UpdatePlaylistRequest, AddSongToPlaylistRequest.
- */
-
 export const getMyPlaylists = async () => {
     const { data } = await api.get("/playlists/me");
     return data;

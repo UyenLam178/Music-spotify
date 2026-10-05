@@ -1,8 +1,3 @@
-// Backend hiện chưa có entity/controller cho Song, Album, Artist (chỉ mới có
-// DTO cho User & Playlist). File này cung cấp dữ liệu mẫu để giao diện chạy
-// được ngay hôm nay; songService.js sẽ ưu tiên gọi API thật và tự fallback
-// về data này nếu backend chưa sẵn sàng — khi backend bổ sung endpoint,
-// chỉ cần bỏ phần fallback là xong, không cần đổi UI.
 
 const cover = (seed, color = "1DB954") =>
     `https://placehold.co/400x400/${color}/191414?text=${encodeURIComponent(seed)}`;
