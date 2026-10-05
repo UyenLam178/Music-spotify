@@ -104,7 +104,7 @@ const en = {
     auth: {
         loginRequired: "You need to log in to use this feature.",
         emailLabel: "Email",
-        emailPlaceholder: "you@example.com",
+        emailPlaceholder: "Enter your Gmail",
         passwordLabel: "Password",
         confirmPasswordLabel: "Confirm password",
         usernameLabel: "Username",

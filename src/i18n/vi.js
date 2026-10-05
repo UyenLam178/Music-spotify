@@ -104,7 +104,7 @@ const vi = {
     auth: {
         loginRequired: "Bạn cần đăng nhập để sử dụng chức năng này.",
         emailLabel: "Email",
-        emailPlaceholder: "ten@vidu.com",
+        emailPlaceholder: "Hãy nhập Gmail của bạn",
         passwordLabel: "Mật khẩu",
         confirmPasswordLabel: "Xác nhận mật khẩu",
         usernameLabel: "Tên đăng nhập",
