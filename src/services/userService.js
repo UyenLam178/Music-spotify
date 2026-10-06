@@ -1,78 +1,44 @@
 import api from "./api";
 
-// UC06
-export const logout = async () => {
-    const { data } = await api.post("/users/logout");
-    return data;
-};
+export const logout = async () => (await api.post("/users/logout")).data;
 
-// UC07 -> { id, username, email, fullName, avatarUrl, accountStatus, role,
-//           artistRequestStatus, artistName, bio }
-export const getProfile = async () => {
-    const { data } = await api.get("/users/profile");
-    return data;
-};
+export const getProfile = async () => (await api.get("/users/me/profile")).data;
 
-// UC08
-export const updateProfile = async ({ fullName }) => {
-    const { data } = await api.put("/users/profile", { fullName });
-    return data;
-};
+export const updateProfile = async ({ fullName }) =>
+    (await api.put("/users/me/profile", { fullName })).data;
 
-// UC10 -- multipart/form-data, part tên "file" -> User đã cập nhật
+// Backend: POST /me/avatar (multipart, part tên "file")
 export const updateAvatar = async (file) => {
     const form = new FormData();
     form.append("file", file);
-    const { data } = await api.put("/users/avatar", form, {
+    const { data } = await api.post("/users/me/avatar", form, {
         headers: { "Content-Type": "multipart/form-data" },
     });
     return data;
 };
 
-// UC09 bước 1: kiểm tra mật khẩu hiện tại + gửi OTP qua email
-export const requestChangePasswordOtp = async ({ currentPassword }) => {
-    const { data } = await api.post("/users/password/otp", { currentPassword });
-    return data;
-};
+export const requestChangePasswordOtp = async ({ currentPassword }) =>
+    (await api.post("/users/me/change-password/request-otp", { currentPassword })).data;
 
-// UC09 bước 2: xác thực OTP + đặt mật khẩu mới
-export const changePassword = async ({ otp, newPassword }) => {
-    const { data } = await api.put("/users/password", { otpCode: otp, newPassword });
-    return data;
-};
+export const changePassword = async ({ otp, newPassword }) =>
+    (await api.put("/users/me/change-password", { otpCode: otp, newPassword })).data;
 
-// UC13 bước 1: kiểm tra email mới chưa dùng + gửi OTP tới email mới
-export const requestUpdateEmailOtp = async ({ newEmail }) => {
-    const { data } = await api.post("/users/email/otp", { newEmail });
-    return data;
-};
+export const requestUpdateEmailOtp = async ({ newEmail }) =>
+    (await api.post("/users/me/email/request-otp", { newEmail })).data;
 
-// UC13 bước 2: xác thực OTP -> đổi email (email mới đã lưu cùng OTP ở otp_verifications.new_email)
-export const updateEmail = async ({ otp }) => {
-    const { data } = await api.put("/users/email", { otpCode: otp });
-    return data;
-};
+export const updateEmail = async ({ otp }) =>
+    (await api.put("/users/me/email", { otpCode: otp })).data;
 
-// UC11
-export const disableAccount = async ({ currentPassword }) => {
-    const { data } = await api.put("/users/disable", { currentPassword });
-    return data;
-};
+// Backend (AccountActionRequest) nhận field "password", không phải "currentPassword"
+export const disableAccount = async ({ currentPassword }) =>
+    (await api.put("/users/me/disable", { password: currentPassword })).data;
 
-// UC12 (DELETE có body nên phải truyền qua `data`)
-export const deleteAccount = async ({ currentPassword }) => {
-    const { data } = await api.delete("/users", { data: { currentPassword } });
-    return data;
-};
+// Backend: PUT /me/delete (soft delete), không phải DELETE
+export const deleteAccount = async ({ currentPassword }) =>
+    (await api.put("/users/me/delete", { password: currentPassword })).data;
 
-// UC14
-export const requestBecomeArtist = async ({ artistName, bio }) => {
-    const { data } = await api.post("/users/artist-request", { artistName, bio });
-    return data;
-};
+export const requestBecomeArtist = async ({ artistName, bio }) =>
+    (await api.post("/users/me/artist-request", { artistName, bio })).data;
 
-// UC19
-export const updateArtistProfile = async ({ artistName, bio }) => {
-    const { data } = await api.put("/users/artist-profile", { artistName, bio });
-    return data;
-};
+export const updateArtistProfile = async ({ artistName, bio }) =>
+    (await api.put("/users/me/artist-profile", { artistName, bio })).data;
