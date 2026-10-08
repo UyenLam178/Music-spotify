@@ -116,16 +116,16 @@ const en = {
     },
 
     login: {
-        title: "Log in to Musicify",
+        title: "Log in to MySpotify",
         verifiedBanner: "Verification successful! Please log in with {{email}}.",
         passwordResetBanner: "Password reset successfully! Please log in with your new password.",
         noAccountPrefix: "Don't have an account? ",
-        registerNow: "Sign up now on Musicify",
+        registerNow: "Sign up now on MySpotify",
         invalidCredentials: "Incorrect email or password.",
     },
 
     register: {
-        title: "Create a Musicify account",
+        title: "Create a MySpotify account",
         haveAccountPrefix: "Already have an account? ",
         loginHere: "Log in here",
         failedDefault: "Registration failed, please try again.",
@@ -236,7 +236,7 @@ const en = {
     artistSection: {
         becomeTitle: "Become an artist",
         profileTitle: "Artist profile",
-        hint: "Send a request to publish music on Musicify. An admin will review and approve it.",
+        hint: "Send a request to publish music on MySpotify. An admin will review and approve it.",
         nameLabel: "Artist name",
         bioLabel: "Bio",
         submitRequest: "Send request",

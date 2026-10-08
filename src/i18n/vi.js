@@ -116,16 +116,16 @@ const vi = {
     },
 
     login: {
-        title: "Đăng nhập vào Musicify",
+        title: "Đăng nhập vào MySpotify",
         verifiedBanner: "Xác thực thành công! Hãy đăng nhập với email {{email}}.",
         passwordResetBanner: "Đặt lại mật khẩu thành công! Hãy đăng nhập bằng mật khẩu mới.",
         noAccountPrefix: "Bạn chưa có tài khoản? ",
-        registerNow: "Đăng ký ngay tại Musicify",
+        registerNow: "Đăng ký ngay tại MySpotify",
         invalidCredentials: "Email hoặc mật khẩu không đúng.",
     },
 
     register: {
-        title: "Tạo tài khoản Musicify",
+        title: "Tạo tài khoản MySpotify",
         haveAccountPrefix: "Bạn đã có tài khoản? ",
         loginHere: "Đăng nhập tại đây",
         failedDefault: "Đăng ký thất bại, vui lòng thử lại.",
@@ -236,7 +236,7 @@ const vi = {
     artistSection: {
         becomeTitle: "Trở thành nghệ sĩ",
         profileTitle: "Hồ sơ nghệ sĩ",
-        hint: "Gửi yêu cầu để được đăng nhạc trên Musicify. Quản trị viên sẽ xem xét và phê duyệt.",
+        hint: "Gửi yêu cầu để được đăng nhạc trên MySpotify. Quản trị viên sẽ xem xét và phê duyệt.",
         nameLabel: "Nghệ danh",
         bioLabel: "Tiểu sử",
         submitRequest: "Gửi yêu cầu",

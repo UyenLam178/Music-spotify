@@ -131,7 +131,7 @@ export default function Sidebar() {
           <span className="sb-logo-dot" />
 
           <span>
-                    Musicify
+                    MySpotify
                 </span>
         </div>
 

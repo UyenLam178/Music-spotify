@@ -6,7 +6,11 @@ Nếu backend đặt path khác, chỉ cần sửa 3 file: `src/services/authSer
 
 - Base URL: `/api` (dev: Vite proxy sang `http://localhost:8080`, xem `vite.config.js`)
 - Body/Response: JSON (riêng avatar là `multipart/form-data`)
-- Xác thực: `Authorization: Bearer <token>` (JWT – `JwtUtil` / `JwtAuthenticationFilter`)
+- Xác thực: JWT nằm trong **cookie HttpOnly** (không dùng header `Authorization`, frontend không lưu token).
+  - `POST /auth/login` phải trả `Set-Cookie: token=<JWT>; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=...` và body `{ userId, username, role }`.
+  - `JwtAuthenticationFilter` đọc JWT từ cookie `token`.
+  - `POST /users/logout` phải xoá cookie (`Set-Cookie: token=; Max-Age=0; Path=/; HttpOnly`).
+  - Không đặt thuộc tính `Domain` (để cookie gắn theo domain Vercel khi đi qua rewrite).
 - Lỗi: frontend hiển thị trường **`message`** của body JSON, vd `400 { "message": "Mã OTP không hợp lệ hoặc đã hết hạn" }`
 - Đối tượng `User` trả về **không** chứa `password`:
   `{ id, username, email, fullName, avatarUrl, accountStatus, role, artistRequestStatus, artistName, bio }`

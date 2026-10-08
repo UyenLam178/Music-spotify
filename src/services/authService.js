@@ -1,4 +1,4 @@
-import api, { tokenStorage } from "./api";
+import api from "./api";
 
 // UC01 Đăng ký -> backend tạo user (UNVERIFIED, role USER) và gửi OTP REGISTER qua email
 export const register = async ({ username, email, password }) => {
@@ -12,13 +12,11 @@ export const verifyOtp = async ({ email, otp }) => {
     return data;
 };
 
-// UC03 Đăng nhập -> LoginResponse { token, userId, username, role }
+// UC03 Đăng nhập -> backend set cookie HttpOnly chứa JWT, body trả { userId, username, role }.
+// Frontend không đụng tới token.
 export const login = async ({ email, password }) => {
     const { data } = await api.post("/auth/login", { email, password });
-    if (!data?.token) throw new Error("Backend không trả về JWT (LoginResponse.token)");
-    tokenStorage.setToken(data.token);
-    // Không trả token ra ngoài: nơi gọi chỉ cần userId/username/role, tránh token
-    // lọt vào state React / log.
+    // Phòng khi backend vẫn còn trả token trong body: bỏ đi, không để lọt vào state/log.
     const { token: _token, ...safe } = data; // eslint-disable-line no-unused-vars
     return safe;
 };

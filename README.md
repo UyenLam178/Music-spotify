@@ -1,4 +1,4 @@
-# Musicify – Frontend (React + Vite)
+# MySpotify – Frontend (React + Vite)
 
 Giao diện kiểu Spotify, kết nối với backend **Spring Boot** qua REST + JWT.
 Module đã đồng bộ với sơ đồ use case / class / ERD: **Module Người dùng** (UC01–UC13).

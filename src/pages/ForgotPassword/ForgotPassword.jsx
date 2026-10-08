@@ -9,7 +9,7 @@ export default function ForgotPassword() {
       <div className="auth-card">
         <div className="sb-brand auth-brand">
           <span className="sb-logo-dot" />
-          <span>Musicify</span>
+          <span>MySpotify</span>
         </div>
         <h1 className="auth-title">{t("forgotPassword.title")}</h1>
         <ForgotPasswordForm />

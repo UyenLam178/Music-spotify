@@ -78,7 +78,7 @@ export default function ResetPassword() {
       <div className="auth-card">
         <div className="sb-brand auth-brand">
           <span className="sb-logo-dot" />
-          <span>Musicify</span>
+          <span>MySpotify</span>
         </div>
         <h1 className="auth-title">{t("resetPassword.title")}</h1>
         <form onSubmit={handleSubmit} noValidate>

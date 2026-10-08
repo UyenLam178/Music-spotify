@@ -1,6 +1,5 @@
 import axios from "axios";
 import i18n from "i18next";
-import { isTokenExpired } from "../utils/jwt";
 
 // ---------------------------------------------------------------------------
 // Axios instance dùng chung cho toàn bộ frontend.
@@ -10,50 +9,31 @@ import { isTokenExpired } from "../utils/jwt";
 // ---------------------------------------------------------------------------
 export const BASE_URL = (import.meta.env.VITE_API_BASE_URL || "/api").replace(/\/+$/, "");
 
-const TOKEN_KEY = "mw_access_token";
-// Khoá cũ của bản có refresh-token; dọn đi để không để rác trong localStorage.
-const LEGACY_REFRESH_KEY = "mw_refresh_token";
+// JWT nằm trong cookie HttpOnly do backend set (Set-Cookie ở /auth/login).
+// JavaScript KHÔNG đọc được cookie này => XSS không lấy trộm được token, và
+// frontend không cần tự lưu / tự gắn header Authorization.
+// Trình duyệt tự gửi cookie theo mỗi request nhờ `withCredentials: true`.
 
-// Class diagram: LoginResponse { token, userId, username } và JwtUtil chỉ có
-// 1 token (không có refresh token) => chỉ lưu 1 JWT.
-export const tokenStorage = {
-    getToken: () => localStorage.getItem(TOKEN_KEY),
-    setToken: (token) => localStorage.setItem(TOKEN_KEY, token),
-    clear: () => {
-        localStorage.removeItem(TOKEN_KEY);
-        localStorage.removeItem(LEGACY_REFRESH_KEY);
-    },
-};
+// Dọn token cũ của bản trước (lưu localStorage) để không để rác.
+try {
+    localStorage.removeItem("mw_access_token");
+    localStorage.removeItem("mw_refresh_token");
+} catch { /* bỏ qua */ }
 
 const api = axios.create({
     baseURL: BASE_URL,
     headers: { "Content-Type": "application/json" },
+    withCredentials: true,
 });
 
-// Gắn JWT vào mỗi request => JwtAuthenticationFilter ở backend đọc header này.
-api.interceptors.request.use((config) => {
-    const token = tokenStorage.getToken();
-    if (token) {
-        // Token đã hết hạn (đọc "exp" trong payload) -> khỏi gửi lên server, xoá phiên luôn.
-        if (isTokenExpired(token)) {
-            tokenStorage.clear();
-            window.dispatchEvent(new CustomEvent("mw:auth-expired"));
-        } else {
-            config.headers.Authorization = `Bearer ${token}`;
-        }
-    }
-    return config;
-});
-
-// Token hết hạn / không hợp lệ (401) => xoá phiên và báo cho AuthContext.
+// Cookie hết hạn / không hợp lệ (401) => báo cho AuthContext đưa người dùng về trạng thái chưa đăng nhập.
 // Bỏ qua các endpoint /auth/** vì ở đó 401 chỉ nghĩa là "sai email/mật khẩu".
 api.interceptors.response.use(
     (response) => response,
     (error) => {
         const status = error.response?.status;
         const url = error.config?.url || "";
-        if (status === 401 && tokenStorage.getToken() && !url.includes("/auth/")) {
-            tokenStorage.clear();
+        if (status === 401 && !url.includes("/auth/")) {
             window.dispatchEvent(new CustomEvent("mw:auth-expired"));
         }
         return Promise.reject(error);
