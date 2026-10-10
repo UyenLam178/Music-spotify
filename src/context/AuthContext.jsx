@@ -1,6 +1,8 @@
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import * as authService from "../services/authService";
 import * as userService from "../services/userService";
+import { tokenStorage } from "../services/api";
+import { getTokenExpiryMs } from "../utils/jwt";
 
 const AuthContext = createContext(null);
 
@@ -9,15 +11,22 @@ const AuthContext = createContext(null);
 //     artistRequestStatus, artistName, bio }
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
-  // Không đọc được cookie HttpOnly nên không biết đã đăng nhập hay chưa:
-  // luôn hỏi backend 1 lần lúc mở web (cookie tự được gửi kèm).
-  const [isLoading, setIsLoading] = useState(true);
+  // Không có token thì không cần chờ backend => không hiện màn hình loading
+  const [isLoading, setIsLoading] = useState(() => !!tokenStorage.getToken());
 
+  // Có token trong localStorage -> hỏi backend "tôi là ai" để khôi phục phiên.
   const loadCurrentUser = useCallback(async () => {
+    if (!tokenStorage.getToken()) {
+      setUser(null);
+      return;
+    }
     try {
       setUser(await userService.getProfile());
-    } catch {
-      // 401/403 = chưa đăng nhập hoặc cookie hết hạn; lỗi khác cũng coi như chưa có phiên.
+    } catch (err) {
+      const status = err?.response?.status;
+      // Token sai/hết hạn (Spring Security có thể trả 401 hoặc 403) -> bỏ phiên.
+      // Lỗi khác (mất mạng, 5xx) -> giữ token để người dùng thử lại sau.
+      if (status === 401 || status === 403) tokenStorage.clear();
       setUser(null);
     } finally {
       setIsLoading(false);
@@ -25,23 +34,30 @@ export function AuthProvider({ children }) {
   }, []);
 
   useEffect(() => {
-    let alive = true;
-    userService
-      .getProfile()
-      .then((u) => alive && setUser(u))
-      .catch(() => {})
-      .finally(() => alive && setIsLoading(false));
+    if (tokenStorage.getToken()) loadCurrentUser();
     const handleExpired = () => setUser(null);
     window.addEventListener("mw:auth-expired", handleExpired);
-    return () => {
-      alive = false;
-      window.removeEventListener("mw:auth-expired", handleExpired);
-    };
-  }, []);
+    return () => window.removeEventListener("mw:auth-expired", handleExpired);
+  }, [loadCurrentUser]);
 
-  // UC03: login -> backend set cookie -> tải hồ sơ đầy đủ
+  // Hẹn giờ tự đăng xuất đúng lúc JWT hết hạn (không phải đợi request kế tiếp bị 401).
+  // Phụ thuộc vào `user`: login/logout thì token đổi nên hẹn lại.
+  useEffect(() => {
+    const token = tokenStorage.getToken();
+    const expMs = token ? getTokenExpiryMs(token) : null;
+    if (!user || expMs === null) return undefined;
+    // setTimeout tối đa ~24.8 ngày; chặn để tránh tràn số
+    const delay = Math.min(Math.max(expMs - Date.now(), 0), 2 ** 31 - 1);
+    const id = setTimeout(() => {
+      tokenStorage.clear();
+      setUser(null);
+    }, delay);
+    return () => clearTimeout(id);
+  }, [user]);
+
+  // UC03: login -> lưu JWT -> tải hồ sơ đầy đủ
   const login = async (credentials) => {
-    const res = await authService.login(credentials); // LoginResponse { userId, username, role } + cookie HttpOnly
+    const res = await authService.login(credentials); // LoginResponse { token, userId, username, role }
     try {
       setUser(await userService.getProfile());
     } catch {
@@ -55,16 +71,18 @@ export function AuthProvider({ children }) {
   const register = (payload) => authService.register(payload);
 
   // Xoá phiên ở phía client (không gọi backend).
-  // Dùng sau khi vô hiệu hoá / xoá tài khoản, khi cookie không còn dùng được nữa.
-  const endSession = useCallback(() => setUser(null), []);
+  // Dùng sau khi vô hiệu hoá / xoá tài khoản, khi token không còn dùng được nữa.
+  const endSession = useCallback(() => {
+    tokenStorage.clear();
+    setUser(null);
+  }, []);
 
-  // UC06: báo backend đăng xuất -> backend xoá cookie (Set-Cookie Max-Age=0).
-  // Dù lỗi mạng vẫn đưa UI về trạng thái chưa đăng nhập.
+  // UC06: báo backend đăng xuất; dù lỗi mạng vẫn phải xoá token ở client.
   const logout = async () => {
     try {
       await userService.logout();
     } catch {
-      /* bỏ qua */
+      /* bỏ qua: JWT stateless, xoá token ở client là đủ */
     } finally {
       endSession();
     }
