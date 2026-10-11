@@ -29,6 +29,7 @@ const track = (id, title, artistId, artistName, albumId, albumTitle, coverUrl, d
     albumTitle,
     coverUrl,
     duration, // giây
+    genreId: undefined,
     audioUrl: "https://interactive-examples.mdn.mozilla.net/media/cc0-audio/t-rex-roar.mp3",
 });
 
@@ -46,6 +47,11 @@ export const mockSongs = [
     track("s11", "Hào Quang", "a5", "MCK", "al6", "Yên", cover("HQ", "263238"), 223),
     track("s12", "Dễ Đến Dễ Đi", "a6", "AMEE", "al5", "Dreamee", cover("DDDD", "AD1457"), 205),
 ];
+
+const songGenres = {"s1": "g1", "s2": "g1", "s3": "g3", "s4": "g4", "s5": "g2", "s6": "g2", "s7": "g4", "s8": "g1", "s9": "g6", "s10": "g2", "s11": "g2", "s12": "g1"};
+mockSongs.forEach((song) => {
+    song.genreId = songGenres[song.id];
+});
 
 export const mockGenres = [
     { id: "g1", name: "V-Pop", color: "8D67AB" },

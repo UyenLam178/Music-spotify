@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { IconPlay } from "../Common/Icons";
 
-export default function PlaylistHeader({ playlist, songCount = 0, totalDuration = 0, onPlay, onEdit }) {
+export default function PlaylistHeader({ playlist, songCount = 0, totalDuration = 0, onPlay, onEdit, onDelete }) {
   const { t } = useTranslation();
   const totalMinutes = Math.round(totalDuration / 60);
 
@@ -31,6 +31,11 @@ export default function PlaylistHeader({ playlist, songCount = 0, totalDuration 
         <button className="btn-icon play-btn" onClick={onPlay} aria-label={t("playlist.playAria")}>
           <IconPlay />
         </button>
+        {onDelete && (
+          <button className="btn btn-outline btn-sm" onClick={onDelete}>
+            {t("playlist.delete")}
+          </button>
+        )}
         {onEdit && (
           <button className="btn btn-outline btn-sm" onClick={onEdit}>
             {t("common.edit")}

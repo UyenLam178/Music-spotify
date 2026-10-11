@@ -5,6 +5,7 @@ import * as songService from "../../services/songService";
 import { usePlayer } from "../../context/PlayerContext";
 import SongRow from "../../components/Music/SongRow";
 import Loading from "../../components/Common/Loading";
+import NotFound from "../NotFound/NotFound";
 import { IconPlay } from "../../components/Common/Icons";
 
 export default function Album() {
@@ -12,14 +13,15 @@ export default function Album() {
     const { id } = useParams();
     const navigate = useNavigate();
     const { playQueue } = usePlayer();
-    const [album, setAlbum] = useState(null);
+    const [album, setAlbum] = useState(undefined); // undefined = đang tải, null = không có
 
     useEffect(() => {
-        setAlbum(null);
+        setAlbum(undefined);
         songService.getAlbumById(id).then(setAlbum);
     }, [id]);
 
-    if (!album) return <Loading full />;
+    if (album === undefined) return <Loading full />;
+    if (album === null) return <NotFound />;
 
     const songs = album.songs || [];
 

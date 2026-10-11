@@ -6,6 +6,7 @@ import { resolveAssetUrl } from "../../services/api";
 import { Role } from "../../utils/enums";
 import { IconChevronDown, IconUser, IconLogout } from "../Common/Icons";
 import SearchBar from "../Search/SearchBar";
+import NotificationBell from "./NotificationBell";
 
 export default function Header() {
   const { t } = useTranslation();
@@ -44,6 +45,8 @@ export default function Header() {
 
       <div className="header-right" ref={menuRef}>
         {isAuthenticated ? (
+          <>
+          <NotificationBell />
           <div className="user-menu">
             <button className="user-pill" onClick={() => setMenuOpen((o) => !o)}>
               <span className="user-avatar">
@@ -57,6 +60,11 @@ export default function Header() {
                 <button onClick={() => { setMenuOpen(false); navigate("/profile"); }}>
                   <IconUser /> {t("header.account")}
                 </button>
+                {user?.role === Role.ARTIST && (
+                  <button onClick={() => { setMenuOpen(false); navigate("/artist-studio"); }}>
+                    <IconUser /> {t("header.studio")}
+                  </button>
+                )}
                 {user?.role === Role.ADMIN && (
                   <button onClick={() => { setMenuOpen(false); navigate("/admin"); }}>
                     <IconUser /> {t("header.admin")}
@@ -69,6 +77,7 @@ export default function Header() {
               </div>
             )}
           </div>
+          </>
         ) : (
           <div className="auth-buttons">
             <button className="btn btn-ghost" onClick={() => navigate("/register")}>

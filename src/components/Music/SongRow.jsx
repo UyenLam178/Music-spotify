@@ -1,7 +1,11 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { usePlayer } from "../../context/PlayerContext";
-import { IconPlay, IconPause, IconHeart, IconMore } from "../Common/Icons";
+import { useAuth } from "../../context/AuthContext";
+import { Role } from "../../utils/enums";
+import { IconPlay, IconPause, IconHeart, IconPlus, IconX } from "../Common/Icons";
+import AddToPlaylistModal from "../Playlist/AddToPlaylistModal";
 
 const formatDuration = (sec = 0) => {
   const m = Math.floor(sec / 60);
@@ -11,10 +15,15 @@ const formatDuration = (sec = 0) => {
   return `${m}:${s}`;
 };
 
-export default function SongRow({ song, index, songList, onAddToPlaylist }) {
+// onRemove (tuỳ chọn): hiện nút xoá bài khỏi playlist (dùng trong trang Playlist)
+export default function SongRow({ song, index, songList, onRemove }) {
   const { t } = useTranslation();
   const { currentSong, isPlaying, playSong, togglePlay } = usePlayer();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const [pickerOpen, setPickerOpen] = useState(false);
+  // Chỉ USER và ARTIST có playlist; ADMIN thì không
+  const canUsePlaylist = user?.role === Role.USER || user?.role === Role.ARTIST;
   const isCurrent = currentSong?.id === song.id;
 
   const handlePlay = () => {
@@ -58,16 +67,28 @@ export default function SongRow({ song, index, songList, onAddToPlaylist }) {
           <IconHeart />
         </button>
         <span className="song-row-duration">{formatDuration(song.duration)}</span>
-        {onAddToPlaylist && (
+        {canUsePlaylist && (
           <button
             className="btn-icon"
             aria-label={t("common.addToPlaylist")}
-            onClick={() => onAddToPlaylist(song)}
+            title={t("common.addToPlaylist")}
+            onClick={() => setPickerOpen(true)}
           >
-            <IconMore />
+            <IconPlus />
+          </button>
+        )}
+        {onRemove && (
+          <button
+            className="btn-icon"
+            aria-label={t("playlist.removeSong")}
+            title={t("playlist.removeSong")}
+            onClick={() => onRemove(song)}
+          >
+            <IconX />
           </button>
         )}
       </div>
+      {pickerOpen && <AddToPlaylistModal isOpen onClose={() => setPickerOpen(false)} song={song} />}
     </div>
   );
 }

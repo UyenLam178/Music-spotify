@@ -16,6 +16,7 @@ import {
 import LanguageSwitcher from "../Common/LanguageSwitcher";
 
 import { useAuth } from "../../context/AuthContext";
+import { Role } from "../../utils/enums";
 
 import * as playlistService
   from "../../services/playlistService";
@@ -25,9 +26,13 @@ export default function Sidebar() {
 
   const {
     isAuthenticated,
+    user,
   } = useAuth();
 
   const navigate = useNavigate();
+
+  // ADMIN không có playlist
+  const hasPlaylists = user?.role === Role.USER || user?.role === Role.ARTIST;
 
   const [playlists, setPlaylists] =
       useState([]);
@@ -35,12 +40,20 @@ export default function Sidebar() {
   const [creating, setCreating] =
       useState(false);
 
+
+  const [reloadTick, setReloadTick] = useState(0);
+
+  useEffect(() => {
+    const onChanged = () => setReloadTick((n) => n + 1);
+    window.addEventListener("mw:playlists-changed", onChanged);
+    return () => window.removeEventListener("mw:playlists-changed", onChanged);
+  }, []);
+
   useEffect(() => {
     let cancelled = false;
 
-    if (!isAuthenticated) {
-      setPlaylists([]);
-      return;
+    if (!isAuthenticated || !hasPlaylists) {
+      return undefined;
     }
 
     playlistService
@@ -68,7 +81,7 @@ export default function Sidebar() {
     return () => {
       cancelled = true;
     };
-  }, [isAuthenticated]);
+  }, [isAuthenticated, hasPlaylists, reloadTick]);
 
   const navItemClass = ({
                           isActive,
@@ -180,6 +193,27 @@ export default function Sidebar() {
           </NavLink>
         </nav>
 
+        {user?.role === Role.ARTIST && (
+            <nav className="sb-nav">
+              <div className="sb-section-label">{t("sidebar.artistArea")}</div>
+              <NavLink to="/artist-studio" className={navItemClass}>
+                <IconLibrary />
+                <span>{t("studio.title")}</span>
+              </NavLink>
+            </nav>
+        )}
+
+        {user?.role === Role.ADMIN && (
+            <nav className="sb-nav">
+              <div className="sb-section-label">{t("sidebar.adminArea")}</div>
+              <NavLink to="/admin" className={navItemClass}>
+                <IconLibrary />
+                <span>{t("admin.title")}</span>
+              </NavLink>
+            </nav>
+        )}
+
+        {user?.role !== Role.ADMIN && (
         <div className="sb-library">
           <div className="sb-library-head">
             <NavLink
@@ -225,7 +259,7 @@ export default function Sidebar() {
                 </p>
             )}
 
-            {isAuthenticated &&
+            {isAuthenticated && hasPlaylists &&
                 playlists.length ===
                 0 && (
                     <p className="sb-hint">
@@ -235,7 +269,7 @@ export default function Sidebar() {
                     </p>
                 )}
 
-            {playlists.map(
+            {(isAuthenticated && hasPlaylists ? playlists : []).map(
                 (playlist) => (
                     <NavLink
                         key={
@@ -282,6 +316,8 @@ export default function Sidebar() {
             )}
           </div>
         </div>
+
+        )}
 
         <LanguageSwitcher />
       </aside>

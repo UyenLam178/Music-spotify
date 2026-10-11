@@ -6,6 +6,8 @@ import * as playlistService from "../../services/playlistService";
 import PlaylistCard from "../../components/Playlist/PlaylistCard";
 import Loading from "../../components/Common/Loading";
 import Button from "../../components/Common/Button";
+import StatusBanner from "../../components/Common/StatusBanner";
+import { extractErrorMessage } from "../../services/api";
 
 export default function Library() {
     const { t } = useTranslation();
@@ -13,17 +15,22 @@ export default function Library() {
     const navigate = useNavigate();
     const [playlists, setPlaylists] = useState(null);
     const [creating, setCreating] = useState(false);
+    const [status, setStatus] = useState({ type: "", message: "" });
+
+    const [tick, setTick] = useState(0);
+    useEffect(() => {
+        const on = () => setTick((n) => n + 1);
+        window.addEventListener("mw:playlists-changed", on);
+        return () => window.removeEventListener("mw:playlists-changed", on);
+    }, []);
 
     useEffect(() => {
-        if (!isAuthenticated) {
-            setPlaylists([]);
-            return;
-        }
+        if (!isAuthenticated) return;
         playlistService
             .getMyPlaylists()
             .then((data) => setPlaylists(Array.isArray(data) ? data : []))
             .catch(() => setPlaylists([]));
-    }, [isAuthenticated]);
+    }, [isAuthenticated, tick]);
 
     const handleCreate = async () => {
         setCreating(true);
@@ -34,8 +41,8 @@ export default function Library() {
                 isPublic: false,
             });
             navigate(`/playlist/${playlist.id}`);
-        } catch {
-            // im lặng bỏ qua nếu backend chưa có API
+        } catch (err) {
+            setStatus({ type: "error", message: extractErrorMessage(err) });
         } finally {
             setCreating(false);
         }
@@ -61,6 +68,7 @@ export default function Library() {
                     {t("library.createPlaylist")}
                 </Button>
             </div>
+            <StatusBanner status={status} />
             {playlists.length === 0 ? (
                 <p className="sb-hint">{t("library.empty")}</p>
             ) : (

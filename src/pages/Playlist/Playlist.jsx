@@ -58,10 +58,30 @@ export default function Playlist() {
 
     const songs = playlist.songs || [];
     const totalDuration = songs.reduce((sum, s) => sum + (s.duration || 0), 0);
-    const isOwner = user && playlist.ownerId && user.id === playlist.ownerId;
+    // Playlist lưu cục bộ luôn là của người đang đăng nhập
+    const isOwner = playlist.local || (user && playlist.ownerId && user.id === playlist.ownerId);
 
     const handlePlayAll = () => {
         if (songs.length) playQueue(songs, 0);
+    };
+
+    const handleRemoveSong = async (song) => {
+        try {
+            await playlistService.removeSongFromPlaylist(id, song.id);
+            setPlaylist((prev) => ({ ...prev, songs: (prev.songs || []).filter((x) => x.id !== song.id) }));
+        } catch (err) {
+            setError(extractErrorMessage(err));
+        }
+    };
+
+    const handleDelete = async () => {
+        if (!window.confirm(t("playlist.confirmDelete", { name: playlist.name }))) return;
+        try {
+            await playlistService.deletePlaylist(id);
+            navigate("/library", { replace: true });
+        } catch (err) {
+            setError(extractErrorMessage(err));
+        }
     };
 
     const handleSaveEdit = async (e) => {
@@ -86,6 +106,7 @@ export default function Playlist() {
                 totalDuration={totalDuration}
                 onPlay={handlePlayAll}
                 onEdit={isOwner ? () => setEditOpen(true) : undefined}
+                onDelete={isOwner ? handleDelete : undefined}
             />
 
             {songs.length === 0 ? (
@@ -101,7 +122,7 @@ export default function Playlist() {
                         <span></span>
                     </div>
                     {songs.map((song, i) => (
-                        <SongRow key={song.id} song={song} index={i} songList={songs} />
+                        <SongRow key={song.id} song={song} index={i} songList={songs} onRemove={isOwner ? handleRemoveSong : undefined} />
                     ))}
                 </div>
             )}

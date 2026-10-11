@@ -6,20 +6,22 @@ import { usePlayer } from "../../context/PlayerContext";
 import SongRow from "../../components/Music/SongRow";
 import AlbumCard from "../../components/Music/AlbumCard";
 import Loading from "../../components/Common/Loading";
+import NotFound from "../NotFound/NotFound";
 import { IconPlay } from "../../components/Common/Icons";
 
 export default function Artist() {
     const { t, i18n } = useTranslation();
     const { id } = useParams();
     const { playQueue } = usePlayer();
-    const [artist, setArtist] = useState(null);
+    const [artist, setArtist] = useState(undefined); // undefined = đang tải, null = không có
 
     useEffect(() => {
-        setArtist(null);
+        setArtist(undefined);
         songService.getArtistById(id).then(setArtist);
     }, [id]);
 
-    if (!artist) return <Loading full />;
+    if (artist === undefined) return <Loading full />;
+    if (artist === null) return <NotFound />;
 
     const topSongs = artist.topSongs || [];
     const albums = artist.albums || [];

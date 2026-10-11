@@ -99,4 +99,4 @@ Frontend chỉ hiện trang `/admin` và mục "Quản trị" trong menu khi `ro
 | Chưa có | Trang `/verify-otp`, mục "Trở thành nghệ sĩ" / hồ sơ nghệ sĩ, trang `/admin`, phân quyền theo `role` |
 
 Phần nhạc (bài hát, album, nghệ sĩ, playlist, tìm kiếm) không thuộc sơ đồ này nên giữ nguyên;
-các service nhạc vẫn fallback về `mockData` khi backend chưa có endpoint.
+các service nhạc gọi backend trước; mock (`mockData`) chỉ dùng khi endpoint chưa có và được điều khiển bằng `VITE_USE_MOCK=auto|on|off` trong `.env` (xem `src/services/mockMode.js`).

@@ -889,3 +889,124 @@
 .status-disabled { background: rgba(245, 155, 35, 0.2); color: #f59b23; }
 .status-deleted { background: rgba(241, 94, 108, 0.2); color: #f15e6c; }
 .status-unverified { background: #2a2a2a; color: #b3b3b3; }
+
+/* ---------- Artist Studio (quản lý nhạc của nghệ sĩ) ---------- */
+.studio-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 16px; flex-wrap: wrap; }
+.studio-song { display: flex; align-items: center; gap: 12px; }
+.studio-cover {
+  width: 48px; height: 48px; flex: none; border-radius: 4px; overflow: hidden;
+  background: var(--color-bg-highlight); display: flex; align-items: center; justify-content: center;
+}
+.studio-cover img { width: 100%; height: 100%; object-fit: cover; }
+.studio-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+.studio-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.studio-chip {
+  display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px;
+  border-radius: 999px; background: var(--color-bg-highlight); font-size: 13px;
+}
+.studio-chip button { border: 0; background: none; color: inherit; cursor: pointer; font-size: 12px; }
+.studio-suggest {
+  list-style: none; margin-top: 4px; background: var(--color-bg-highlight);
+  border-radius: 6px; max-height: 160px; overflow-y: auto;
+}
+.studio-suggest button {
+  width: 100%; text-align: left; padding: 8px 12px; border: 0; background: none;
+  color: #fff; font: inherit; cursor: pointer;
+}
+.studio-suggest button:hover { background: var(--color-bg-highlight-hover); }
+.song-pending { background: rgba(245, 155, 35, 0.2); color: #f59b23; }
+.song-scheduled { background: rgba(80, 155, 245, 0.2); color: #509bf5; }
+.song-released { background: rgba(29, 185, 84, 0.2); color: #1ed760; }
+.song-rejected { background: rgba(241, 94, 108, 0.2); color: #f15e6c; }
+.song-hidden { background: #2a2a2a; color: #b3b3b3; }
+.sb-section-label {
+  padding: 12px 12px 4px; font-size: 12px; font-weight: 700; letter-spacing: .06em;
+  text-transform: uppercase; color: var(--color-text-subdued);
+}
+.admin-note { margin-bottom: 12px; }
+
+/* ---------- Mailbox ---------- */
+.header-right { display: flex; align-items: center; gap: 12px; }
+.mailbox { position: relative; }
+.mailbox-btn { position: relative; }
+.mailbox-badge {
+  position: absolute; top: -4px; right: -4px; min-width: 16px; height: 16px; padding: 0 4px;
+  border-radius: 999px; background: #f15e6c; color: #fff; font-size: 10px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+}
+.mailbox-panel {
+  position: absolute; right: 0; top: calc(100% + 8px); width: 340px; max-width: 90vw; max-height: 420px;
+  overflow-y: auto; background: var(--color-bg-elevated); border-radius: var(--radius-md);
+  box-shadow: 0 8px 24px rgba(0,0,0,.6); z-index: 200;
+}
+.mailbox-head { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-bottom: 1px solid #2a2a2a; }
+.mailbox-head button { border: 0; background: none; color: var(--color-green); font: inherit; font-size: 12px; cursor: pointer; }
+.mailbox-panel ul { list-style: none; }
+.mailbox-panel li button {
+  width: 100%; text-align: left; border: 0; background: none; color: #fff; font: inherit;
+  padding: 12px 16px; display: flex; flex-direction: column; gap: 4px; cursor: pointer; border-bottom: 1px solid #1f1f1f;
+}
+.mailbox-panel li button:hover { background: var(--color-bg-highlight); }
+.mailbox-panel li.unread { background: rgba(29,185,84,.06); }
+.mailbox-item-title { font-weight: 700; font-size: 14px; display: flex; align-items: center; gap: 6px; }
+.mailbox-item-msg { font-size: 13px; color: var(--color-text-subdued); }
+.mailbox-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--color-green); flex: none; }
+
+/* ---------- Profile (bố cục kiểu Facebook) ---------- */
+.profile-page { max-width: 980px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+.profile-card { background: var(--color-bg-elevated); border-radius: var(--radius-lg); padding: 20px 24px; }
+.profile-card h2 { font-size: 16px; margin-bottom: 12px; }
+.profile-top { padding: 0; overflow: hidden; }
+.profile-cover { height: 180px; background: linear-gradient(135deg, #1db954, #0d3b24); }
+.profile-cover.cover-artist { background: linear-gradient(135deg, #8d67ab, #1e3264); }
+.profile-cover.cover-admin { background: linear-gradient(135deg, #f59b23, #7a3b00); }
+.profile-top-body { display: flex; align-items: flex-end; gap: 20px; padding: 0 24px; margin-top: -56px; }
+.profile-top .profile-avatar-lg { width: 128px; height: 128px; border: 4px solid var(--color-bg-elevated); }
+.profile-top-meta { padding-bottom: 8px; }
+.profile-top-meta h1 { font-size: 28px; }
+.profile-tabs { display: flex; gap: 4px; padding: 8px 24px 0; margin-top: 12px; border-top: 1px solid #2a2a2a; }
+.profile-tabs button {
+  border: 0; background: none; color: var(--color-text-subdued); font: inherit; font-weight: 700;
+  padding: 12px 16px; cursor: pointer; border-bottom: 3px solid transparent;
+}
+.profile-tabs button.active { color: #fff; border-bottom-color: var(--color-green); }
+.about-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+.about-row { display: flex; justify-content: space-between; gap: 16px; padding: 10px 0; border-bottom: 1px solid #242424; font-size: 14px; }
+.about-row:last-child { border-bottom: 0; }
+.about-label { color: var(--color-text-subdued); }
+.about-value { text-align: right; word-break: break-word; }
+.edit-layout { display: grid; grid-template-columns: 240px 1fr; gap: 20px; align-items: start; }
+.edit-menu { background: var(--color-bg-elevated); border-radius: var(--radius-lg); padding: 8px; display: flex; flex-direction: column; gap: 2px; position: sticky; top: 8px; }
+.edit-menu button {
+  border: 0; background: none; color: #fff; font: inherit; text-align: left; padding: 12px 14px;
+  border-radius: var(--radius-md); cursor: pointer;
+}
+.edit-menu button:hover { background: var(--color-bg-highlight); }
+.edit-menu button.active { background: var(--color-bg-highlight-hover); font-weight: 700; }
+.edit-menu button.danger { color: #f15e6c; }
+.edit-panel { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+.edit-panel .profile-section { border-radius: var(--radius-lg); }
+@media (max-width: 760px) {
+  .edit-layout { grid-template-columns: 1fr; }
+  .edit-menu { position: static; flex-direction: row; overflow-x: auto; }
+  .edit-menu button { white-space: nowrap; }
+  .profile-top-body { flex-direction: column; align-items: flex-start; }
+}
+
+/* ---------- Genre / sort / playlist ---------- */
+button.genre-tile { border: 0; text-align: left; cursor: pointer; font-family: inherit; transition: transform .15s; }
+button.genre-tile:hover { transform: scale(1.03); }
+.genre-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+.genre-chips button {
+  border: 0; border-radius: 999px; padding: 8px 16px; font: inherit; font-weight: 600; color: #fff;
+  background: var(--color-bg-elevated); cursor: pointer;
+}
+.genre-chips button.active { background: #fff; color: #000; }
+.genre-hero { border-radius: var(--radius-lg); padding: 32px 24px; margin-bottom: 20px; }
+.genre-hero h1 { font-size: 40px; }
+.sort-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; justify-content: flex-end; font-size: 13px; color: var(--color-text-subdued); }
+.sort-bar select { background: var(--color-bg-elevated); color: #fff; border: 1px solid #3a3a3a; border-radius: 6px; padding: 6px 8px; font: inherit; }
+.playlist-new-row { display: flex; gap: 8px; margin-bottom: 16px; }
+.playlist-new-row input { flex: 1; }
+.song-row { grid-template-columns: 40px 4fr 3fr 190px; }
+.genre-swatch { display: inline-block; width: 16px; height: 16px; border-radius: 4px; vertical-align: middle; margin-right: 6px; }

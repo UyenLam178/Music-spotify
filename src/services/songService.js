@@ -1,22 +1,15 @@
 import api from "./api";
-import {
-    mockSongs,
-    mockAlbums,
-    mockArtists,
-    mockGenres,
-} from "./mockData";
+import * as genreService from "./genreService";
+import { withMock } from "./mockMode";
+import { mockSongs, mockAlbums, mockArtists } from "./mockData";
 
 // ============================================================================
 // songService.js
 //
-// Nguyên tắc: LUÔN ưu tiên gọi API thật từ backend Spring Boot trước.
-// Nếu backend chưa có endpoint đó (404/501) hoặc request lỗi (mất mạng, 500,
-// CORS...), service sẽ tự fallback về mock data để giao diện không bị vỡ.
-//
-// => Khi backend cập nhật / bổ sung endpoint cho Song, Album, Artist, Search,
-//    Genre thì KHÔNG cần sửa gì ở đây hay ở phía component: lần gọi tiếp theo
-//    api.get(...) sẽ thành công và dữ liệu thật sẽ tự động được dùng thay cho
-//    mock, vì mock chỉ được dùng trong khối catch (khi request that bai).
+// Luôn gọi API thật của backend trước. Việc có dùng dữ liệu mẫu (mock) hay
+// không do mockMode.js quyết định (VITE_USE_MOCK = auto | on | off, xem .env):
+// ở chế độ auto, endpoint nào backend đã có thì tự dùng dữ liệu thật, mock chỉ
+// chạy khi endpoint đó chưa có / backend lỗi. Không trộn mock với dữ liệu thật.
 // ============================================================================
 
 // Chuẩn hoá 1 bài hát trả về từ backend (phòng khi backend đặt tên field khác
@@ -33,6 +26,7 @@ const normalizeSong = (song) => {
         coverUrl: song.coverUrl ?? song.imageUrl ?? song.album?.coverUrl,
         duration: song.duration ?? song.durationInSeconds ?? 0,
         audioUrl: song.audioUrl ?? song.fileUrl ?? song.url,
+        genreId: song.genreId ?? song.genre?.id,
         ...song,
     };
 };
@@ -65,145 +59,105 @@ const normalizeArtist = (artist) => {
 
 // Tìm kiếm không phân biệt hoa/thường và dấu tiếng Việt, dùng cho search mock.
 const normalizeText = (str = "") =>
-    str
-        .toString()
-        .toLowerCase()
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "");
-
+    str.toString().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 const matchesQuery = (text, query) => normalizeText(text).includes(normalizeText(query));
+
+const toList = (data) => (Array.isArray(data) ? data : data?.content);
+
+// Lấy danh sách: backend thật -> (nếu cho phép) mock; lỗi khác => []
+const fetchList = async (url, normalize, mockList, params) => {
+    try {
+        const { data } = await withMock(
+            () => api.get(url, params ? { params } : undefined),
+            () => ({ data: mockList() }),
+            url
+        );
+        const list = toList(data);
+        return Array.isArray(list) ? list.map(normalize) : [];
+    } catch (error) {
+        console.error(`Không tải được ${url}:`, error?.response?.status ?? error.message);
+        return [];
+    }
+};
+
+// Lấy 1 đối tượng: backend thật -> (nếu cho phép) mock; không có => null
+const fetchOne = async (url, normalize, mockOne) => {
+    try {
+        const { data } = await withMock(() => api.get(url), () => ({ data: mockOne() }), url);
+        return data ? normalize(data) : null;
+    } catch (error) {
+        console.error(`Không tải được ${url}:`, error?.response?.status ?? error.message);
+        return null;
+    }
+};
 
 // ----------------------------------------------------------------------------
 // Trang chủ
 // ----------------------------------------------------------------------------
+export const getTrendingSongs = () => fetchList("/songs/trending", normalizeSong, () => mockSongs);
 
-// Lấy bài hát thịnh hành
-export const getTrendingSongs = async () => {
-    try {
-        const { data } = await api.get("/songs/trending");
-        return Array.isArray(data) ? data.map(normalizeSong) : data;
-    } catch (error) {
-        console.warn("Backend chưa có /songs/trending → dùng mock data");
-        return mockSongs;
-    }
-};
+export const getNewReleases = () => fetchList("/albums/new-releases", normalizeAlbum, () => mockAlbums);
 
-// Lấy album mới phát hành
-export const getNewReleases = async () => {
-    try {
-        const { data } = await api.get("/albums/new-releases");
-        return Array.isArray(data) ? data.map(normalizeAlbum) : data;
-    } catch (error) {
-        console.warn("Backend chưa có /albums/new-releases → dùng mock data");
-        return mockAlbums;
-    }
-};
-
-// Lấy nghệ sĩ nổi bật
-export const getPopularArtists = async () => {
-    try {
-        const { data } = await api.get("/artists/popular");
-        return Array.isArray(data) ? data.map(normalizeArtist) : data;
-    } catch (error) {
-        console.warn("Backend chưa có /artists/popular → dùng mock data");
-        return mockArtists;
-    }
-};
+export const getPopularArtists = () => fetchList("/artists/popular", normalizeArtist, () => mockArtists);
 
 // ----------------------------------------------------------------------------
-// Chi tiết bài hát / album / nghệ sĩ
-// (Artist.jsx và Album.jsx cần các hàm này — trước đây bị thiếu nên khi bấm
-// vào 1 nghệ sĩ hoặc 1 album, component crash vì gọi hàm undefined → trang
-// trắng/đen. Nay đã bổ sung đầy đủ kèm fallback mock để không còn bị lỗi.)
+// Chi tiết bài hát / album / nghệ sĩ (null nếu không có)
 // ----------------------------------------------------------------------------
+export const getSongById = (id) =>
+    fetchOne(`/songs/${id}`, normalizeSong, () => mockSongs.find((s) => String(s.id) === String(id)) || null);
 
-// Lấy chi tiết 1 bài hát theo id
-export const getSongById = async (id) => {
-    try {
-        const { data } = await api.get(`/songs/${id}`);
-        return normalizeSong(data);
-    } catch (error) {
-        console.warn(`Backend chưa có /songs/${id} → dùng mock data`);
-        const song = mockSongs.find((s) => String(s.id) === String(id));
-        return song ? normalizeSong(song) : null;
-    }
-};
-
-// Lấy chi tiết 1 album theo id, kèm danh sách bài hát trong album
-export const getAlbumById = async (id) => {
-    try {
-        const { data } = await api.get(`/albums/${id}`);
-        return normalizeAlbum(data);
-    } catch (error) {
-        console.warn(`Backend chưa có /albums/${id} → dùng mock data`);
+export const getAlbumById = (id) =>
+    fetchOne(`/albums/${id}`, normalizeAlbum, () => {
         const album = mockAlbums.find((a) => String(a.id) === String(id));
-        if (!album) return null;
-        return normalizeAlbum({
-            ...album,
-            songs: mockSongs.filter((s) => s.albumId === album.id),
-        });
-    }
-};
+        return album ? { ...album, songs: mockSongs.filter((s) => s.albumId === album.id) } : null;
+    });
 
-// Lấy chi tiết 1 nghệ sĩ theo id, kèm bài hát nổi bật và album
-export const getArtistById = async (id) => {
-    try {
-        const { data } = await api.get(`/artists/${id}`);
-        return normalizeArtist(data);
-    } catch (error) {
-        console.warn(`Backend chưa có /artists/${id} → dùng mock data`);
+export const getArtistById = (id) =>
+    fetchOne(`/artists/${id}`, normalizeArtist, () => {
         const artist = mockArtists.find((a) => String(a.id) === String(id));
-        if (!artist) return null;
-        return normalizeArtist({
-            ...artist,
-            topSongs: mockSongs.filter((s) => s.artistId === artist.id),
-            albums: mockAlbums.filter((al) => al.artistId === artist.id),
-        });
-    }
-};
+        return artist
+            ? {
+                  ...artist,
+                  topSongs: mockSongs.filter((s) => s.artistId === artist.id),
+                  albums: mockAlbums.filter((al) => al.artistId === artist.id),
+              }
+            : null;
+    });
 
 // ----------------------------------------------------------------------------
-// Tìm kiếm & thể loại (Search.jsx cần getGenres() và search() — trước đây
-// chưa được export nên trang tìm kiếm bị crash khi mở /search hoặc gõ tìm
-// kiếm. Nay đã bổ sung, ưu tiên gọi backend thật, fallback lọc trên mock.)
+// Tìm kiếm & thể loại
 // ----------------------------------------------------------------------------
+export const getGenres = () => genreService.getGenres();
 
-// Lấy danh sách thể loại nhạc (để hiển thị lưới "Duyệt tất cả")
-export const getGenres = async () => {
-    try {
-        const { data } = await api.get("/genres");
-        return data;
-    } catch (error) {
-        console.warn("Backend chưa có /genres → dùng mock data");
-        return mockGenres;
-    }
-};
+export const getSongsByGenre = (genreId) =>
+    fetchList("/songs", normalizeSong, () => mockSongs.filter((s) => String(s.genreId) === String(genreId)), { genreId });
 
-// Tìm kiếm bài hát / album / nghệ sĩ theo từ khoá.
-// Luôn trả về shape cố định { songs, albums, artists } để Search.jsx
-// không cần biết dữ liệu đến từ backend thật hay từ mock.
+// Luôn trả về shape cố định { songs, albums, artists }
 export const search = async (query) => {
     const q = (query || "").trim();
-    if (!q) return { songs: [], albums: [], artists: [] };
+    const empty = { songs: [], albums: [], artists: [] };
+    if (!q) return empty;
 
     try {
-        const { data } = await api.get("/search", { params: { q } });
+        const { data } = await withMock(
+            () => api.get("/search", { params: { q } }),
+            () => ({
+                data: {
+                    songs: mockSongs.filter((s) => matchesQuery(s.title, q) || matchesQuery(s.artistName, q)),
+                    albums: mockAlbums.filter((a) => matchesQuery(a.title, q) || matchesQuery(a.artistName, q)),
+                    artists: mockArtists.filter((a) => matchesQuery(a.name, q)),
+                },
+            }),
+            "/search"
+        );
         return {
-            songs: (data.songs || []).map(normalizeSong),
-            albums: (data.albums || []).map(normalizeAlbum),
-            artists: (data.artists || []).map(normalizeArtist),
+            songs: (data?.songs || []).map(normalizeSong),
+            albums: (data?.albums || []).map(normalizeAlbum),
+            artists: (data?.artists || []).map(normalizeArtist),
         };
     } catch (error) {
-        console.warn("Backend chưa có /search → tìm kiếm trên mock data");
-        return {
-            songs: mockSongs.filter(
-                (s) => matchesQuery(s.title, q) || matchesQuery(s.artistName, q)
-            ),
-            albums: mockAlbums.filter(
-                (a) => matchesQuery(a.title, q) || matchesQuery(a.artistName, q)
-            ),
-            artists: mockArtists.filter((a) => matchesQuery(a.name, q)),
-        };
+        console.error("Tìm kiếm thất bại:", error?.response?.status ?? error.message);
+        return empty;
     }
 };
 
@@ -215,5 +169,6 @@ export default {
     getAlbumById,
     getArtistById,
     getGenres,
+    getSongsByGenre,
     search,
 };

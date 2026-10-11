@@ -12,6 +12,7 @@ import Album from "./pages/Album/Album";
 import Artist from "./pages/Artist/Artist";
 import Profile from "./pages/Profile/Profile";
 import Admin from "./pages/Admin/Admin";
+import ArtistStudio from "./pages/ArtistStudio/ArtistStudio";
 import { Role } from "./utils/enums";
 import Login from "./pages/Login/Login";
 import Register from "./pages/Register/Register";
@@ -40,8 +41,22 @@ function App() {
               <Route element={<MainLayout />}>
                 <Route path="/" element={<Home />} />
                 <Route path="/search" element={<Search />} />
-                <Route path="/library" element={<Library />} />
-                <Route path="/playlist/:id" element={<Playlist />} />
+                <Route
+                    path="/library"
+                    element={
+                      <ProtectedRoute roles={[Role.USER, Role.ARTIST]}>
+                        <Library />
+                      </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/playlist/:id"
+                    element={
+                      <ProtectedRoute roles={[Role.USER, Role.ARTIST]}>
+                        <Playlist />
+                      </ProtectedRoute>
+                    }
+                />
                 <Route path="/album/:id" element={<Album />} />
                 <Route path="/artist/:id" element={<Artist />} />
                 <Route
@@ -57,6 +72,14 @@ function App() {
                     element={
                       <ProtectedRoute roles={[Role.ADMIN]}>
                         <Admin />
+                      </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/artist-studio"
+                    element={
+                      <ProtectedRoute roles={[Role.ARTIST]}>
+                        <ArtistStudio />
                       </ProtectedRoute>
                     }
                 />

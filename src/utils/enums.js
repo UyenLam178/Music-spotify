@@ -14,3 +14,12 @@ export const ArtistRequestStatus = Object.freeze({
     APPROVED: "APPROVED",
     REJECTED: "REJECTED",
 });
+
+// Trạng thái bài hát (SongStatus ở backend)
+export const SongStatus = Object.freeze({
+    PENDING: "PENDING",
+    APPROVED: "APPROVED",
+    REJECTED: "REJECTED",
+    HIDDEN: "HIDDEN",
+    DELETED: "DELETED",
+});
