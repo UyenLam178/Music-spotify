@@ -32,7 +32,7 @@ const track = (id, title, artistId, artistName, albumId, albumTitle, coverUrl, d
     audioUrl: "https://interactive-examples.mdn.mozilla.net/media/cc0-audio/t-rex-roar.mp3",
 });
 
-export const mockSongs = [
+const baseSongs = [
     track("s1", "Chúng Ta Của Hiện Tại", "a1", "Sơn Tùng M-TP", "al1", "Sky Tour", cover("CTCHT"), 289),
     track("s2", "Lạc Trôi", "a1", "Sơn Tùng M-TP", "al1", "Sky Tour", cover("Lạc Trôi"), 246),
     track("s3", "Bước Qua Nhau", "a2", "Hoàng Dũng", "al4", "Trong Lòng Bàn Tay", cover("BQN", "5D4037"), 258),
@@ -55,3 +55,12 @@ export const mockGenres = [
     { id: "g5", name: "Indie", color: "BC5900" },
     { id: "g6", name: "Acoustic", color: "477D95" },
 ];
+
+
+// Thể loại của từng bài mock (khớp id trong mockGenres)
+const SONG_GENRE = {
+    s1: "g1", s2: "g1", s3: "g3", s4: "g4", s5: "g2", s6: "g2",
+    s7: "g5", s8: "g1", s9: "g6", s10: "g2", s11: "g2", s12: "g1",
+};
+
+export const mockSongs = baseSongs.map((s) => ({ ...s, genreId: SONG_GENRE[s.id] }));

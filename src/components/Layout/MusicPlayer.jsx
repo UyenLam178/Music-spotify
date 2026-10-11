@@ -9,8 +9,8 @@ import {
   IconRepeat,
   IconVolume,
   IconVolumeMute,
-  IconHeart,
 } from "../Common/Icons";
+import LikeButton from "../Common/LikeButton";
 
 const formatTime = (sec = 0) => {
   if (!Number.isFinite(sec)) return "0:00";
@@ -56,9 +56,7 @@ export default function MusicPlayer() {
           <span className="player-track-title">{currentSong.title}</span>
           <span className="player-track-artist">{currentSong.artistName}</span>
         </div>
-        <button className="btn-icon" aria-label={t("common.like")}>
-          <IconHeart />
-        </button>
+        <LikeButton song={currentSong} />
       </div>
 
       <div className="player-center">

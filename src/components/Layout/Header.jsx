@@ -57,6 +57,11 @@ export default function Header() {
                 <button onClick={() => { setMenuOpen(false); navigate("/profile"); }}>
                   <IconUser /> {t("header.account")}
                 </button>
+                {user?.role === Role.ARTIST && (
+                  <button onClick={() => { setMenuOpen(false); navigate("/artist-studio"); }}>
+                    <IconUser /> {t("header.studio")}
+                  </button>
+                )}
                 {user?.role === Role.ADMIN && (
                   <button onClick={() => { setMenuOpen(false); navigate("/admin"); }}>
                     <IconUser /> {t("header.admin")}

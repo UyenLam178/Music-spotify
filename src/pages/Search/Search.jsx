@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { useAuth } from "../../context/AuthContext";
 import * as songService from "../../services/songService";
 import SongRow from "../../components/Music/SongRow";
 import AlbumCard from "../../components/Music/AlbumCard";
@@ -10,6 +11,8 @@ import Loading from "../../components/Common/Loading";
 export default function Search() {
     const { t } = useTranslation();
     const [searchParams] = useSearchParams();
+    const { user } = useAuth();
+    const role = user?.role;
     const query = searchParams.get("q") || "";
     const [genres, setGenres] = useState([]);
     const [results, setResults] = useState(null);
@@ -22,14 +25,22 @@ export default function Search() {
     useEffect(() => {
         if (!query.trim()) {
             setResults(null);
-            return;
+            return undefined;
         }
+        let cancelled = false;
         setIsLoading(true);
-        songService
-            .search(query)
-            .then(setResults)
-            .finally(() => setIsLoading(false));
-    }, [query]);
+        // Debounce: SearchBar điều hướng sau mỗi phím gõ, tránh gọi API liên tục
+        const timer = setTimeout(() => {
+            songService
+                .search(query, { role })
+                .then((r) => !cancelled && setResults(r))
+                .finally(() => !cancelled && setIsLoading(false));
+        }, 300);
+        return () => {
+            cancelled = true;
+            clearTimeout(timer);
+        };
+    }, [query, role]);
 
     if (!query.trim()) {
         return (
@@ -37,9 +48,9 @@ export default function Search() {
                 <h1 style={{ fontSize: 24, marginBottom: 20 }}>{t("search.browseAll")}</h1>
                 <div className="genre-grid">
                     {genres.map((g) => (
-                        <div key={g.id} className="genre-tile" style={{ background: `#${g.color}` }}>
+                        <Link key={g.id} to={`/genre/${g.id}`} className="genre-tile" style={{ background: `#${g.color}` }}>
                             {g.name}
-                        </div>
+                        </Link>
                     ))}
                 </div>
             </div>

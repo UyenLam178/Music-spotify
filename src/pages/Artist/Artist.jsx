@@ -16,10 +16,17 @@ export default function Artist() {
 
     useEffect(() => {
         setArtist(null);
-        songService.getArtistById(id).then(setArtist);
+        songService.getArtistById(id).then((a) => setArtist(a || false));
     }, [id]);
 
-    if (!artist) return <Loading full />;
+    if (artist === null) return <Loading full />;
+    if (artist === false) {
+        return (
+            <div className="empty-state">
+                <h2>{t("common.noResults")}</h2>
+            </div>
+        );
+    }
 
     const topSongs = artist.topSongs || [];
     const albums = artist.albums || [];

@@ -889,3 +889,151 @@
 .status-disabled { background: rgba(245, 155, 35, 0.2); color: #f59b23; }
 .status-deleted { background: rgba(241, 94, 108, 0.2); color: #f15e6c; }
 .status-unverified { background: #2a2a2a; color: #b3b3b3; }
+
+/* ---------- Artist Studio (quản lý nhạc của nghệ sĩ) ---------- */
+.studio-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 16px; flex-wrap: wrap; }
+.studio-song { display: flex; align-items: center; gap: 12px; }
+.studio-cover {
+  width: 48px; height: 48px; flex: none; border-radius: 4px; overflow: hidden;
+  background: var(--color-bg-highlight); display: flex; align-items: center; justify-content: center;
+}
+.studio-cover img { width: 100%; height: 100%; object-fit: cover; }
+.studio-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+.studio-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.studio-chip {
+  display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px;
+  border-radius: 999px; background: var(--color-bg-highlight); font-size: 13px;
+}
+.studio-chip button { border: 0; background: none; color: inherit; cursor: pointer; font-size: 12px; }
+.studio-suggest {
+  list-style: none; margin-top: 4px; background: var(--color-bg-highlight);
+  border-radius: 6px; max-height: 160px; overflow-y: auto;
+}
+.studio-suggest button {
+  width: 100%; text-align: left; padding: 8px 12px; border: 0; background: none;
+  color: #fff; font: inherit; cursor: pointer;
+}
+.studio-suggest button:hover { background: var(--color-bg-highlight-hover); }
+.song-pending { background: rgba(245, 155, 35, 0.2); color: #f59b23; }
+.song-scheduled { background: rgba(80, 155, 245, 0.2); color: #509bf5; }
+.song-released { background: rgba(29, 185, 84, 0.2); color: #1ed760; }
+.song-rejected { background: rgba(241, 94, 108, 0.2); color: #f15e6c; }
+.song-hidden { background: #2a2a2a; color: #b3b3b3; }
+.sb-section-label {
+  padding: 12px 12px 4px; font-size: 12px; font-weight: 700; letter-spacing: .06em;
+  text-transform: uppercase; color: var(--color-text-subdued);
+}
+.admin-note { margin-bottom: 12px; }
+
+/* ======================================================================
+   Nút tim (đã thích)
+   ====================================================================== */
+.like-btn.liked { color: var(--color-green); }
+.like-btn.liked svg { animation: like-pop 0.25s ease; }
+@keyframes like-pop { 0% { transform: scale(0.7); } 60% { transform: scale(1.25); } 100% { transform: scale(1); } }
+
+/* ======================================================================
+   Thể loại: tile, trang thể loại, pill, chấm màu
+   ====================================================================== */
+a.genre-tile { display: block; transition: transform 0.15s ease, filter 0.15s ease; }
+a.genre-tile:hover { transform: scale(1.03); filter: brightness(1.1); }
+.genre-preview { height: 88px; display: flex; align-items: flex-end; }
+.genre-hero { padding: 28px 24px; border-radius: var(--radius-lg); margin: -8px -8px 0; }
+.genre-hero h1 { font-size: 48px; font-weight: 800; margin: 6px 0; }
+.genre-hero p { color: var(--color-text-subdued); font-size: 14px; }
+.genre-dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; flex: none; }
+.genre-pill {
+  display: inline-flex; align-items: center; gap: 8px; padding: 3px 12px;
+  border-radius: 999px; background: var(--color-bg-highlight); font-size: 13px; font-weight: 600;
+}
+
+/* ======================================================================
+   Wizard tải nhạc (3 bước, tông xanh lá)
+   ====================================================================== */
+.wz-stepper { display: flex; align-items: center; list-style: none; margin: 0 0 22px; padding: 0; }
+.wz-step { display: flex; align-items: center; gap: 10px; flex: 1; color: var(--color-text-subdued); font-size: 13px; font-weight: 700; }
+.wz-step:not(:last-child)::after { content: ""; flex: 1; height: 2px; margin: 0 12px; background: var(--color-bg-highlight-hover); }
+.wz-step.done:not(:last-child)::after { background: var(--color-green); }
+.wz-step-dot {
+  width: 30px; height: 30px; border-radius: 50%; flex: none; display: inline-flex; align-items: center; justify-content: center;
+  background: var(--color-bg-highlight); color: var(--color-text); font-size: 14px;
+}
+.wz-step.current { color: var(--color-text); }
+.wz-step.current .wz-step-dot { background: var(--color-green); color: #000; box-shadow: 0 0 0 4px rgba(29, 185, 84, 0.25); }
+.wz-step.done { color: var(--color-green-hover); }
+.wz-step.done .wz-step-dot { background: var(--color-green); color: #000; }
+@media (max-width: 560px) { .wz-step-label { display: none; } }
+
+.wz-body { min-height: 260px; }
+.wz-footer { display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--color-border); }
+
+.wz-genres { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px; }
+.wz-genre {
+  position: relative; display: flex; align-items: center; gap: 8px; padding: 10px 12px; text-align: left;
+  border: 1px solid var(--color-bg-highlight-hover); border-radius: var(--radius-md);
+  background: var(--color-bg-highlight); font-size: 13px; font-weight: 600;
+}
+.wz-genre:hover { background: var(--color-bg-highlight-hover); }
+.wz-genre.selected { border-color: var(--color-green); background: rgba(29, 185, 84, 0.14); }
+.wz-genre-check { margin-left: auto; color: var(--color-green); }
+
+.wz-artist { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: var(--radius-md); background: var(--color-bg-highlight); }
+.wz-artist .sb-hint { padding: 0; }
+.wz-artist-avatar {
+  width: 44px; height: 44px; border-radius: 50%; overflow: hidden; flex: none; background: var(--color-green); color: #000;
+  display: flex; align-items: center; justify-content: center; font-weight: 800;
+}
+.wz-artist-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+.wz-drop {
+  display: flex; align-items: center; gap: 14px; padding: 22px 18px; cursor: pointer;
+  border: 2px dashed rgba(29, 185, 84, 0.6); border-radius: var(--radius-lg); background: rgba(29, 185, 84, 0.06);
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.wz-drop:hover { background: rgba(29, 185, 84, 0.12); border-color: var(--color-green); }
+.wz-drop.has-file { border-style: solid; border-color: var(--color-green); background: rgba(29, 185, 84, 0.14); }
+.wz-drop.compact { flex: 1; padding: 14px; }
+.wz-drop input[type="file"] { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.field .wz-drop input[type="file"] { padding: 0; border: 0; }
+.wz-drop-icon { font-size: 30px; color: var(--color-green); flex: none; }
+.wz-drop-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; font-size: 14px; }
+.wz-drop-text strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wz-drop-text small { color: var(--color-text-subdued); font-size: 12px; }
+
+.wz-cover-row { display: flex; gap: 12px; align-items: stretch; }
+.wz-cover-preview { width: 76px; height: 76px; border-radius: var(--radius-md); object-fit: cover; flex: none; background: var(--color-bg-highlight); }
+.wz-current-file { padding: 14px 16px; margin-bottom: 16px; border-radius: var(--radius-md); background: var(--color-bg-highlight); }
+.wz-current-file .sb-hint { padding: 2px 0 0; }
+
+.wz-upload-btn { min-width: 160px; }
+.wz-progress { position: relative; height: 34px; margin-top: 8px; border-radius: 999px; overflow: hidden; background: var(--color-bg-highlight); }
+.wz-progress-bar { position: absolute; inset: 0 auto 0 0; background: var(--color-green); transition: width 0.2s ease; }
+.wz-progress span { position: relative; display: flex; height: 100%; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; mix-blend-mode: difference; }
+
+.wz-success {
+  display: flex; align-items: center; gap: 10px; padding: 12px 14px; margin-bottom: 16px; border-radius: var(--radius-md);
+  background: rgba(29, 185, 84, 0.14); border: 1px solid var(--color-green); color: var(--color-green-hover); font-weight: 600;
+}
+.wz-summary { display: flex; gap: 14px; align-items: center; padding: 12px; margin-bottom: 16px; border-radius: var(--radius-md); background: var(--color-bg-highlight); }
+.wz-summary img { width: 64px; height: 64px; border-radius: var(--radius-sm); object-fit: cover; }
+.wz-summary .sb-hint { padding: 2px 0 6px; }
+.wz-chip { padding: 5px 14px; border-radius: 999px; background: var(--color-bg-highlight); font-size: 13px; font-weight: 600; }
+.wz-chip:hover { background: var(--color-bg-highlight-hover); }
+.wz-chip.selected { background: var(--color-green); color: #000; }
+.wz-albums { margin-top: -4px; }
+.wz-albums .sb-hint { padding-left: 0; }
+
+/* ======================================================================
+   Admin: thêm thể loại (bảng màu + xác nhận)
+   ====================================================================== */
+.gn-palette { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; }
+.gn-swatch {
+  height: 38px; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center;
+  color: #fff; font-size: 18px; border: 2px solid transparent; transition: transform 0.1s ease;
+}
+.gn-swatch:hover { transform: scale(1.06); }
+.gn-swatch.selected { border-color: #fff; }
+.gn-custom { display: flex; align-items: center; gap: 10px; margin-top: 6px; font-weight: 400; }
+.gn-custom .sb-hint { padding: 0; }
+.gn-custom input[type="color"] { width: 40px; height: 32px; padding: 2px; border: 1px solid #878787; border-radius: var(--radius-sm); background: #121212; cursor: pointer; }
+.gn-confirm-text { margin: 18px 0 4px; font-size: 15px; line-height: 1.5; }

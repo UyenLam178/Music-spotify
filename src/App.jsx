@@ -1,17 +1,21 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import { PlayerProvider } from "./context/PlayerContext";
+import { LikeProvider } from "./context/LikeContext";
 import MainLayout from "./components/Layout/MainLayout";
 import ProtectedRoute from "./components/Common/ProtectedRoute";
 
 import Home from "./pages/Home/Home";
 import Search from "./pages/Search/Search";
 import Library from "./pages/Library/Library";
+import Genre from "./pages/Genre/Genre";
+import Liked from "./pages/Liked/Liked";
 import Playlist from "./pages/Playlist/Playlist";
 import Album from "./pages/Album/Album";
 import Artist from "./pages/Artist/Artist";
 import Profile from "./pages/Profile/Profile";
 import Admin from "./pages/Admin/Admin";
+import ArtistStudio from "./pages/ArtistStudio/ArtistStudio";
 import { Role } from "./utils/enums";
 import Login from "./pages/Login/Login";
 import Register from "./pages/Register/Register";
@@ -27,6 +31,7 @@ function App() {
   return (
       <BrowserRouter>
         <AuthProvider>
+          <LikeProvider>
           <PlayerProvider>
             <Routes>
               {/* Trang xác thực - không dùng MainLayout (không có sidebar/player) */}
@@ -41,6 +46,8 @@ function App() {
                 <Route path="/" element={<Home />} />
                 <Route path="/search" element={<Search />} />
                 <Route path="/library" element={<Library />} />
+                <Route path="/genre/:id" element={<Genre />} />
+                <Route path="/liked" element={<Liked />} />
                 <Route path="/playlist/:id" element={<Playlist />} />
                 <Route path="/album/:id" element={<Album />} />
                 <Route path="/artist/:id" element={<Artist />} />
@@ -60,10 +67,19 @@ function App() {
                       </ProtectedRoute>
                     }
                 />
+                <Route
+                    path="/artist-studio"
+                    element={
+                      <ProtectedRoute roles={[Role.ARTIST]}>
+                        <ArtistStudio />
+                      </ProtectedRoute>
+                    }
+                />
                 <Route path="*" element={<NotFound />} />
               </Route>
             </Routes>
           </PlayerProvider>
+          </LikeProvider>
         </AuthProvider>
       </BrowserRouter>
   );

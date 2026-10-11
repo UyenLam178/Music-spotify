@@ -3,8 +3,11 @@ import {
     mockSongs,
     mockAlbums,
     mockArtists,
-    mockGenres,
 } from "./mockData";
+import * as genreService from "./genreService";
+import { readJson, writeJson } from "./storage";
+import { placeholderCover } from "../utils/cover";
+import { getUploadedSongsByGenre, getAllUploadedSongs, getUploadedArtists } from "./songMetaService";
 
 // ============================================================================
 // songService.js
@@ -69,7 +72,8 @@ const normalizeText = (str = "") =>
         .toString()
         .toLowerCase()
         .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "");
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/đ/g, "d");
 
 const matchesQuery = (text, query) => normalizeText(text).includes(normalizeText(query));
 
@@ -153,7 +157,14 @@ export const getArtistById = async (id) => {
     } catch (error) {
         console.warn(`Backend chưa có /artists/${id} → dùng mock data`);
         const artist = mockArtists.find((a) => String(a.id) === String(id));
-        if (!artist) return null;
+        if (!artist) {
+            // Nghệ sĩ thật (chưa có API backend): dựng từ các bài đã duyệt trên máy này
+            const real = getUploadedArtists().find((a) => String(a.id) === String(id));
+            if (real) return normalizeArtist({ ...real, albums: [] });
+            // Nghệ sĩ mới chưa có bài nào: dùng thông tin đã thấy khi tìm kiếm
+            const seen = readJson(SEEN_KEY, {})[String(id)];
+            return seen ? normalizeArtist({ ...toArtist(seen.id, seen.name), topSongs: [], albums: [] }) : null;
+        }
         return normalizeArtist({
             ...artist,
             topSongs: mockSongs.filter((s) => s.artistId === artist.id),
@@ -168,21 +179,71 @@ export const getArtistById = async (id) => {
 // kiếm. Nay đã bổ sung, ưu tiên gọi backend thật, fallback lọc trên mock.)
 // ----------------------------------------------------------------------------
 
-// Lấy danh sách thể loại nhạc (để hiển thị lưới "Duyệt tất cả")
-export const getGenres = async () => {
+// Lấy danh sách thể loại nhạc (backend nếu có, + thể loại admin tự thêm)
+export const getGenres = () => genreService.getGenres();
+
+// Bài hát thuộc 1 thể loại: backend (GET /genres/{id}/songs) nếu có, nếu không thì mock
+// + các bài nghệ sĩ đã tải lên, đã được duyệt và phát hành (xem songMetaService).
+export const getSongsByGenre = async (genreId) => {
+    let base;
     try {
-        const { data } = await api.get("/genres");
-        return data;
-    } catch (error) {
-        console.warn("Backend chưa có /genres → dùng mock data");
-        return mockGenres;
+        const { data } = await api.get(`/genres/${genreId}/songs`);
+        const list = Array.isArray(data) ? data : data?.content || [];
+        base = list.map(normalizeSong);
+    } catch {
+        base = mockSongs.filter((s) => String(s.genreId) === String(genreId)).map(normalizeSong);
     }
+    const seen = new Set(base.map((s) => String(s.id)));
+    const uploaded = getUploadedSongsByGenre(genreId).filter((s) => !seen.has(String(s.id)));
+    return [...base, ...uploaded];
 };
 
 // Tìm kiếm bài hát / album / nghệ sĩ theo từ khoá.
 // Luôn trả về shape cố định { songs, albums, artists } để Search.jsx
 // không cần biết dữ liệu đến từ backend thật hay từ mock.
-export const search = async (query) => {
+// ----------------------------------------------------------------------------
+// Nghệ sĩ thật theo vai trò người đang tìm (backend chưa có API tìm kiếm cho người nghe):
+//   ARTIST : GET /artist/search-artists  (DB trực tiếp => nghệ sĩ mới được duyệt cũng thấy ngay)
+//   ADMIN  : GET /admin/users            (lọc role ARTIST đang ACTIVE theo nghệ danh)
+//   USER / khách: chưa có endpoint nào => chỉ thấy nghệ sĩ có bài đã biết (mock + bài đã duyệt)
+// ----------------------------------------------------------------------------
+const SEEN_KEY = "mw_seen_artists";
+const toArtist = (id, name, avatarUrl) => ({ id, name, avatarUrl: avatarUrl || placeholderCover(name) });
+
+const rememberArtists = (list) => {
+    const seen = readJson(SEEN_KEY, {});
+    list.forEach((a) => {
+        seen[String(a.id)] = { id: a.id, name: a.name };
+    });
+    writeJson(SEEN_KEY, seen);
+};
+
+const searchRealArtists = async (q, role) => {
+    try {
+        let list = [];
+        if (role === "ARTIST") {
+            const { data } = await api.get("/artist/search-artists", { params: { keyword: q } });
+            list = (Array.isArray(data) ? data : []).map((a) => toArtist(a.id, a.artistName));
+        } else if (role === "ADMIN") {
+            const { data } = await api.get("/admin/users");
+            const users = Array.isArray(data) ? data : data?.content || [];
+            list = users
+                .filter((u) => u.role === "ARTIST" && u.accountStatus === "ACTIVE" && matchesQuery(u.artistName, q))
+                .map((u) => toArtist(u.id, u.artistName, u.avatarUrl));
+        }
+        rememberArtists(list);
+        return list;
+    } catch {
+        return [];
+    }
+};
+
+const dedupeById = (list) => {
+    const seen = new Set();
+    return list.filter((a) => !seen.has(String(a.id)) && seen.add(String(a.id)));
+};
+
+export const search = async (query, { role } = {}) => {
     const q = (query || "").trim();
     if (!q) return { songs: [], albums: [], artists: [] };
 
@@ -194,15 +255,32 @@ export const search = async (query) => {
             artists: (data.artists || []).map(normalizeArtist),
         };
     } catch (error) {
-        console.warn("Backend chưa có /search → tìm kiếm trên mock data");
+        console.warn("Backend chưa có /search → tìm kiếm trên mock data + bài đã tải lên");
+        const uploaded = getAllUploadedSongs();
+        const uploadedSongs = uploaded
+            .filter(({ song, featured }) =>
+                [song.title, song.artistName, song.albumTitle, ...featured.map((a) => a.artistName)].some((v) =>
+                    matchesQuery(v, q)
+                )
+            )
+            .map(({ song }) => song);
+        const uploadedArtists = getUploadedArtists()
+            .filter((a) => matchesQuery(a.name, q))
+            .map((a) => toArtist(a.id, a.name, a.avatarUrl));
+        const realArtists = await searchRealArtists(q, role);
         return {
-            songs: mockSongs.filter(
-                (s) => matchesQuery(s.title, q) || matchesQuery(s.artistName, q)
-            ),
+            songs: [
+                ...mockSongs.filter((s) => matchesQuery(s.title, q) || matchesQuery(s.artistName, q)),
+                ...uploadedSongs,
+            ],
             albums: mockAlbums.filter(
                 (a) => matchesQuery(a.title, q) || matchesQuery(a.artistName, q)
             ),
-            artists: mockArtists.filter((a) => matchesQuery(a.name, q)),
+            artists: dedupeById([
+                ...mockArtists.filter((a) => matchesQuery(a.name, q)),
+                ...realArtists,
+                ...uploadedArtists,
+            ]),
         };
     }
 };
@@ -215,5 +293,6 @@ export default {
     getAlbumById,
     getArtistById,
     getGenres,
+    getSongsByGenre,
     search,
 };

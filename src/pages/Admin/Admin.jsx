@@ -2,14 +2,17 @@ import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../../context/AuthContext";
 import * as adminService from "../../services/adminService";
+import * as genreService from "../../services/genreService";
 import { extractErrorMessage } from "../../services/api";
 import { Role, AccountStatus } from "../../utils/enums";
 import Button from "../../components/Common/Button";
 import Loading from "../../components/Common/Loading";
 import StatusBanner from "../../components/Common/StatusBanner";
+import GenreModal from "../../components/Admin/GenreModal";
 
 // Trang quản trị (chỉ ADMIN, xem App.jsx):
 //   Tab "Người dùng"       : xem danh sách, khóa / mở khóa, gán vai trò   (getAllUsers, lock/unlockAccount, assignRole)
+//   Quy tắc: ADMIN không thể đồng thời là ARTIST; ARTIST chỉ được cấp bằng cách duyệt yêu cầu.
 //   Tab "Yêu cầu nghệ sĩ"  : xem yêu cầu chờ duyệt, duyệt / từ chối       (getPendingArtistRequests, approve/rejectArtistRequest)
 export default function Admin() {
   const { t } = useTranslation();
@@ -17,18 +20,22 @@ export default function Admin() {
   const [tab, setTab] = useState("users");
   const [users, setUsers] = useState([]);
   const [requests, setRequests] = useState([]);
+  const [genres, setGenres] = useState([]);
+  const [genreModal, setGenreModal] = useState(false);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState(null);
   const [status, setStatus] = useState({ type: "", message: "" });
 
   const load = useCallback(async () => {
     try {
-      const [u, r] = await Promise.all([
+      const [u, r, g] = await Promise.all([
         adminService.getAllUsers(),
         adminService.getPendingArtistRequests(),
+        genreService.getGenres(),
       ]);
       setUsers(u);
       setRequests(r);
+      setGenres(g);
     } catch (err) {
       setStatus({ type: "error", message: extractErrorMessage(err, t("admin.loadFailed")) });
     } finally {
@@ -59,6 +66,20 @@ export default function Admin() {
     }
   };
 
+  // Hạ ARTIST xuống vai trò khác sẽ xóa hồ sơ nghệ sĩ (backend) -> hỏi xác nhận
+  const changeRole = (u, role) => {
+    if (u.role === Role.ARTIST && !window.confirm(t("admin.confirmDemote", { name: u.artistName || u.username }))) return;
+    run(u.id, () => adminService.assignRole(u.id, role), "admin.roleAssigned");
+  };
+
+  // Thêm thể loại (sau khi admin đã xác nhận màu trong GenreModal)
+  const createGenre = async (payload) => {
+    const created = await genreService.createGenre(payload);
+    setGenres(await genreService.getGenres());
+    setGenreModal(false);
+    setStatus({ type: "success", message: t("adminGenre.created", { name: created.name }) });
+  };
+
   if (loading) return <Loading full />;
 
   return (
@@ -84,11 +105,51 @@ export default function Admin() {
         >
           {t("admin.requestsTab")} ({requests.length})
         </button>
+        <button
+          role="tab"
+          aria-selected={tab === "genres"}
+          className={tab === "genres" ? "active" : ""}
+          onClick={() => setTab("genres")}
+        >
+          {t("adminGenre.tab")} ({genres.length})
+        </button>
       </div>
 
       <StatusBanner status={status} />
 
-      {tab === "users" ? (
+      {tab === "users" && <p className="sb-hint admin-note">{t("admin.roleNote")}</p>}
+
+      {tab === "genres" ? (
+        <>
+          <div className="studio-head">
+            <p className="sb-hint admin-note" style={{ margin: 0 }}>{t("adminGenre.note")}</p>
+            <Button onClick={() => setGenreModal(true)}>+ {t("adminGenre.add")}</Button>
+          </div>
+          <div className="table-wrap">
+            <table className="data-table" id="admin-genres">
+              <thead>
+                <tr>
+                  <th>{t("adminGenre.colGenre")}</th>
+                  <th>{t("adminGenre.colColor")}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {genres.map((g) => (
+                  <tr key={g.id} data-genre={g.name}>
+                    <td>
+                      <span className="genre-pill">
+                        <i className="genre-dot" style={{ background: `#${g.color}` }} />
+                        {g.name}
+                      </span>
+                    </td>
+                    <td><code>#{g.color}</code></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      ) : tab === "users" ? (
         <div className="table-wrap">
           <table className="data-table" id="admin-users">
             <thead>
@@ -104,6 +165,8 @@ export default function Admin() {
               {users.map((u) => {
                 const isMe = u.id === me?.id;
                 const deleted = u.accountStatus === AccountStatus.DELETED;
+                const unverified = u.accountStatus === AccountStatus.UNVERIFIED;
+                const isAdminRow = u.role === Role.ADMIN;
                 const locked = u.accountStatus === AccountStatus.DISABLED;
                 const canLock = u.accountStatus === AccountStatus.ACTIVE;
                 return (
@@ -119,23 +182,27 @@ export default function Admin() {
                       </span>
                     </td>
                     <td>
-                      <select
-                        aria-label={t("admin.colRole")}
-                        value={u.role}
-                        disabled={isMe || deleted || busyId === u.id}
-                        onChange={(e) =>
-                          run(u.id, () => adminService.assignRole(u.id, e.target.value), "admin.roleAssigned")
-                        }
-                      >
-                        {Object.values(Role).map((r) => (
-                          <option key={r} value={r}>
-                            {t(`role.${r}`)}
-                          </option>
-                        ))}
-                      </select>
+                      {isAdminRow ? (
+                        // ADMIN không đổi được vai trò và không thể đồng thời là ARTIST
+                        <span className="role-badge role-admin">{t("role.ADMIN")}</span>
+                      ) : (
+                        <select
+                          aria-label={t("admin.colRole")}
+                          value={u.role}
+                          disabled={isMe || deleted || unverified || busyId === u.id}
+                          onChange={(e) => changeRole(u, e.target.value)}
+                        >
+                          {Object.values(Role).map((r) => (
+                            // ARTIST chỉ được cấp qua việc duyệt yêu cầu (backend từ chối gán trực tiếp)
+                            <option key={r} value={r} disabled={r === Role.ARTIST && u.role !== Role.ARTIST}>
+                              {t(`role.${r}`)}
+                            </option>
+                          ))}
+                        </select>
+                      )}
                     </td>
                     <td>
-                      {!isMe && !deleted && (canLock || locked) && (
+                      {!isMe && !isAdminRow && !deleted && (canLock || locked) && (
                         <Button
                           size="sm"
                           variant="outline"
@@ -191,7 +258,8 @@ export default function Admin() {
                         size="sm"
                         variant="outline"
                         disabled={busyId === u.id}
-                        onClick={() => run(u.id, () => adminService.rejectArtistRequest(u.id), "admin.rejected")}
+                        onClick={() => window.confirm(t("admin.confirmReject", { name: u.artistName || u.username })) &&
+                          run(u.id, () => adminService.rejectArtistRequest(u.id), "admin.rejected")}
                       >
                         {t("admin.reject")}
                       </Button>
@@ -202,6 +270,10 @@ export default function Admin() {
             </tbody>
           </table>
         </div>
+      )}
+
+      {genreModal && (
+        <GenreModal existing={genres} onClose={() => setGenreModal(false)} onCreate={createGenre} />
       )}
     </div>
   );

@@ -11,11 +11,13 @@ import {
   IconSearch,
   IconLibrary,
   IconPlus,
+  IconHeart,
 } from "../Common/Icons";
 
 import LanguageSwitcher from "../Common/LanguageSwitcher";
 
 import { useAuth } from "../../context/AuthContext";
+import { Role } from "../../utils/enums";
 
 import * as playlistService
   from "../../services/playlistService";
@@ -25,6 +27,7 @@ export default function Sidebar() {
 
   const {
     isAuthenticated,
+    user,
   } = useAuth();
 
   const navigate = useNavigate();
@@ -178,7 +181,32 @@ export default function Sidebar() {
                         )}
                     </span>
           </NavLink>
+
+          <NavLink to="/liked" className={navItemClass}>
+            <IconHeart />
+            <span>{t("common.likedSongs")}</span>
+          </NavLink>
         </nav>
+
+        {user?.role === Role.ARTIST && (
+            <nav className="sb-nav">
+              <div className="sb-section-label">{t("sidebar.artistArea")}</div>
+              <NavLink to="/artist-studio" className={navItemClass}>
+                <IconLibrary />
+                <span>{t("studio.title")}</span>
+              </NavLink>
+            </nav>
+        )}
+
+        {user?.role === Role.ADMIN && (
+            <nav className="sb-nav">
+              <div className="sb-section-label">{t("sidebar.adminArea")}</div>
+              <NavLink to="/admin" className={navItemClass}>
+                <IconLibrary />
+                <span>{t("admin.title")}</span>
+              </NavLink>
+            </nav>
+        )}
 
         <div className="sb-library">
           <div className="sb-library-head">

@@ -1,7 +1,8 @@
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { usePlayer } from "../../context/PlayerContext";
-import { IconPlay, IconPause, IconHeart, IconMore } from "../Common/Icons";
+import { IconPlay, IconPause, IconMore } from "../Common/Icons";
+import LikeButton from "../Common/LikeButton";
 
 const formatDuration = (sec = 0) => {
   const m = Math.floor(sec / 60);
@@ -54,9 +55,7 @@ export default function SongRow({ song, index, songList, onAddToPlaylist }) {
       <div className="song-row-album">{song.albumTitle}</div>
 
       <div className="song-row-actions">
-        <button className="btn-icon" aria-label={t("common.like")}>
-          <IconHeart />
-        </button>
+        <LikeButton song={song} />
         <span className="song-row-duration">{formatDuration(song.duration)}</span>
         {onAddToPlaylist && (
           <button

@@ -95,3 +95,13 @@ export const IconX = (p) => (
     <path d="M6.4 5 5 6.4 10.6 12 5 17.6 6.4 19 12 13.4 17.6 19 19 17.6 13.4 12 19 6.4 17.6 5 12 10.6z" />
   </svg>
 );
+export const IconUpload = (p) => (
+  <svg {...base} {...p}>
+    <path d="M11 16V7.8L8.4 10.4 7 9l5-5 5 5-1.4 1.4L13 7.8V16zM5 18h14v2H5z" />
+  </svg>
+);
+export const IconCheck = (p) => (
+  <svg {...base} {...p}>
+    <path d="M9.5 16.2 5.3 12l-1.4 1.4 5.6 5.6L20.1 8.4 18.7 7z" />
+  </svg>
+);
