@@ -11,7 +11,11 @@ export default function ArtistCard({ artist }) {
       role="button"
     >
       <div className="media-card-cover artist-cover">
-        <img src={artist.avatarUrl} alt={artist.name} />
+        {artist.avatarUrl ? (
+          <img src={artist.avatarUrl} alt={artist.name} />
+        ) : (
+          <span className="artist-initial">{(artist.name || "?").charAt(0).toUpperCase()}</span>
+        )}
       </div>
       <p className="media-card-title" title={artist.name}>
         {artist.name}

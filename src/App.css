@@ -1010,3 +1010,45 @@ button.genre-tile:hover { transform: scale(1.03); }
 .playlist-new-row input { flex: 1; }
 .song-row { grid-template-columns: 40px 4fr 3fr 190px; }
 .genre-swatch { display: inline-block; width: 16px; height: 16px; border-radius: 4px; vertical-align: middle; margin-right: 6px; }
+
+/* Nút tim / thêm vào playlist nổi trên ảnh bìa của SongCard */
+.media-card-actions {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  gap: 6px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.media-card:hover .media-card-actions,
+.media-card-actions:focus-within {
+  opacity: 1;
+}
+.media-card-actions .btn-icon {
+  width: 32px;
+  height: 32px;
+  background: rgba(0, 0, 0, 0.65);
+  color: #fff;
+}
+@media (hover: none) {
+  .media-card-actions {
+    opacity: 1;
+  }
+}
+.liked-section {
+  margin-bottom: 32px;
+}
+
+/* Nghệ sĩ chưa có ảnh đại diện: hiện chữ cái đầu */
+.artist-initial {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  font-size: 48px;
+  font-weight: 700;
+  color: var(--color-text-subdued);
+  background: var(--color-bg-highlight);
+}

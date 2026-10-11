@@ -100,3 +100,29 @@ Frontend chỉ hiện trang `/admin` và mục "Quản trị" trong menu khi `ro
 
 Phần nhạc (bài hát, album, nghệ sĩ, playlist, tìm kiếm) không thuộc sơ đồ này nên giữ nguyên;
 các service nhạc gọi backend trước; mock (`mockData`) chỉ dùng khi endpoint chưa có và được điều khiển bằng `VITE_USE_MOCK=auto|on|off` trong `.env` (xem `src/services/mockMode.js`).
+
+## Endpoint backend còn thiếu (frontend đã sẵn sàng gọi)
+
+Kiểm tra `myspotify_backend` hiện chỉ có `/api/auth`, `/api/users`, `/api/admin` (người dùng + duyệt nghệ sĩ) và `/api/artist` (quản lý bài hát).
+Các query của người nghe trong `SongRepository` (findPublished, searchPublished, findPublishedById, findPublishedByArtist, incrementPlayCount) **chưa có controller gọi tới**.
+
+| Chức năng | Endpoint frontend gọi | Ghi chú |
+|---|---|---|
+| Tìm kiếm | `GET /api/search?q=` -> `{ songs, artists, albums }` | artists: `{ id, artistName, avatarUrl }` |
+| Trang chủ | `GET /api/songs/trending`, `/albums/new-releases`, `/artists/popular` | |
+| Chi tiết | `GET /api/songs/{id}`, `/albums/{id}`, `/artists/{id}` | |
+| Lượt nghe | `POST /api/songs/{id}/play` | gọi `incrementPlayCount`; hiện không có chỗ nào tăng `playCount` |
+| Tim bài hát | `POST/DELETE /api/songs/{id}/like`, `GET /api/songs/liked` | cần bảng like + `likeCount` trong `SongResponse`/`SongManageResponse` |
+| Playlist | `/api/playlists/**` | chưa có entity/controller |
+
+Khi chưa có endpoint, tim và playlist lưu cục bộ (localStorage) theo `VITE_USE_MOCK` (xem `src/services/mockMode.js`).
+
+## Tìm kiếm khi backend chưa có `GET /api/search`
+
+Frontend thử `GET /api/search?q=` trước. Nếu chưa có thì tìm bằng API thật mà tài khoản đang đăng nhập được phép gọi:
+
+| Quyền | Tìm được | Nguồn |
+|---|---|---|
+| ARTIST | bài hát của chính mình (mọi trạng thái), nghệ sĩ khác, chính mình | `GET /artist/songs`, `GET /artist/search-artists` |
+| ADMIN | nghệ sĩ đang hoạt động | `GET /admin/users` |
+| USER / chưa đăng nhập | không có API thật nào → dùng dữ liệu mẫu (nếu `VITE_USE_MOCK` không phải `off`) | |

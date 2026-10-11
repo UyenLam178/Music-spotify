@@ -17,6 +17,7 @@ const en = {
         addToPlaylist: "Add to playlist",
         like: "Like",
         unlike: "Unlike",
+        likeFailed: "Could not update like",
         cancel: "Cancel",
         save: "Save",
         edit: "Edit",
@@ -179,6 +180,7 @@ const en = {
     },
 
     library: {
+        likedEmpty: "You have not liked any songs yet. Tap the heart on a song to add it here.",
         loginPrompt: "Log in to see your library",
         loginHint: "Save your favorite playlists, albums, and artists here.",
         title: "Your library",
@@ -327,6 +329,7 @@ const en = {
     },
 
     artist: {
+        noSongs: "No songs to show yet.",
         label: "Artist",
         followers: "followers",
         topSongs: "Top songs",
@@ -366,6 +369,7 @@ const en = {
         colStatus: "Status",
         colRelease: "Release",
         colPlays: "Plays",
+        colLikes: "Likes",
         titleLabel: "Song title",
         titleRequired: "Song title is required",
         titleLength: "Song title must be at most {{max}} characters",

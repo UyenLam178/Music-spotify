@@ -17,6 +17,7 @@ const vi = {
         addToPlaylist: "Thêm vào playlist",
         like: "Thích",
         unlike: "Bỏ thích",
+        likeFailed: "Thích bài hát thất bại",
         cancel: "Hủy",
         save: "Lưu",
         edit: "Chỉnh sửa",
@@ -179,6 +180,7 @@ const vi = {
     },
 
     library: {
+        likedEmpty: "Bạn chưa thích bài hát nào. Bấm biểu tượng trái tim ở bài hát để thêm vào đây.",
         loginPrompt: "Đăng nhập để xem thư viện của bạn",
         loginHint: "Lưu playlist, album và nghệ sĩ yêu thích tại đây.",
         title: "Thư viện của bạn",
@@ -327,6 +329,7 @@ const vi = {
     },
 
     artist: {
+        noSongs: "Chưa có bài hát nào để hiển thị.",
         label: "Nghệ sĩ",
         followers: "người theo dõi",
         topSongs: "Bài hát nổi bật",
@@ -366,6 +369,7 @@ const vi = {
         colStatus: "Trạng thái",
         colRelease: "Phát hành",
         colPlays: "Lượt nghe",
+        colLikes: "Lượt thích",
         titleLabel: "Tên bài hát",
         titleRequired: "Tên bài hát không được để trống",
         titleLength: "Tên bài hát tối đa {{max}} ký tự",

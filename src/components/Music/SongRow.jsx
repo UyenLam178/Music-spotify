@@ -4,7 +4,8 @@ import { useTranslation } from "react-i18next";
 import { usePlayer } from "../../context/PlayerContext";
 import { useAuth } from "../../context/AuthContext";
 import { Role } from "../../utils/enums";
-import { IconPlay, IconPause, IconHeart, IconPlus, IconX } from "../Common/Icons";
+import { IconPlay, IconPause, IconPlus, IconX } from "../Common/Icons";
+import LikeButton from "./LikeButton";
 import AddToPlaylistModal from "../Playlist/AddToPlaylistModal";
 
 const formatDuration = (sec = 0) => {
@@ -63,9 +64,7 @@ export default function SongRow({ song, index, songList, onRemove }) {
       <div className="song-row-album">{song.albumTitle}</div>
 
       <div className="song-row-actions">
-        <button className="btn-icon" aria-label={t("common.like")}>
-          <IconHeart />
-        </button>
+        <LikeButton song={song} />
         <span className="song-row-duration">{formatDuration(song.duration)}</span>
         {canUsePlaylist && (
           <button

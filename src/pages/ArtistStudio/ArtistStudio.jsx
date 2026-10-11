@@ -386,6 +386,7 @@ export default function ArtistStudio() {
                 <th>{t("studio.colStatus")}</th>
                 <th>{t("studio.colRelease")}</th>
                 <th>{t("studio.colPlays")}</th>
+                <th>{t("studio.colLikes")}</th>
                 <th>{t("admin.colActions")}</th>
               </tr>
             </thead>
@@ -422,6 +423,8 @@ export default function ArtistStudio() {
                     </td>
                     <td>{s.releaseAt ? formatDate(s.releaseAt) : "—"}</td>
                     <td>{s.playCount ?? 0}</td>
+                    {/* likeCount do backend trả về; chưa có thì hiện "—" */}
+                    <td>{s.likeCount ?? "—"}</td>
                     <td>
                       <div className="studio-actions">
                         <Button size="sm" variant="outline" disabled={busy} onClick={() => setModal({ kind: "form", song: s })}>

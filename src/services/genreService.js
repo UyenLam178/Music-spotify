@@ -44,7 +44,12 @@ export const normalizeColor = (c) => String(c || "535353").replace("#", "").slic
 
 export const getGenres = async () => {
     try {
-        const { data } = await withMock(() => api.get("/genres"), () => ({ data: readLocal() }), "/genres");
+        const { data } = await withMock(
+            () => api.get("/genres"),
+            () => ({ data: readLocal() }),
+            "/genres",
+            (d) => Array.isArray(Array.isArray(d) ? d : d?.content)
+        );
         const list = Array.isArray(data) ? data : data?.content;
         return Array.isArray(list) ? list.map((g) => ({ ...g, color: normalizeColor(g.color) })) : [];
     } catch (error) {

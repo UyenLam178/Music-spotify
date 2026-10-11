@@ -29,7 +29,7 @@ export default function Artist() {
     return (
         <div>
             <div className="artist-banner">
-                <img src={artist.avatarUrl} alt={artist.name} />
+                {artist.avatarUrl && <img src={artist.avatarUrl} alt={artist.name} />}
                 <div className="artist-banner-overlay">
                     <span className="artist-banner-label">{t("artist.label")}</span>
                     <h1 className="artist-banner-name">{artist.name}</h1>
@@ -62,6 +62,10 @@ export default function Artist() {
                         ))}
                     </div>
                 </section>
+            )}
+
+            {topSongs.length === 0 && albums.length === 0 && (
+                <p className="sb-hint">{t("artist.noSongs")}</p>
             )}
 
             {albums.length > 0 && (

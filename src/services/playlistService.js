@@ -1,5 +1,6 @@
 import api, { tokenStorage } from "./api";
 import { decodeJwt } from "../utils/jwt";
+import { MOCK_MODE, canFallback } from "./mockMode";
 
 // ============================================================================
 // Playlist cho USER và ARTIST (ADMIN không có playlist).
@@ -10,9 +11,6 @@ import { decodeJwt } from "../utils/jwt";
 // sửa gì: lần gọi sau sẽ dùng dữ liệu thật.
 // (Playlist lưu cục bộ chỉ tồn tại trong trình duyệt này.)
 // ============================================================================
-
-// Lỗi xác thực thì ném lại; còn lại coi như "backend chưa hỗ trợ" -> dùng local.
-const shouldFallback = (err) => ![401, 403].includes(err?.response?.status);
 
 const owner = () => decodeJwt(tokenStorage.getToken() || "")?.sub || "guest";
 const key = () => `mw_local_playlists_${owner()}`;
@@ -34,11 +32,17 @@ const writeAll = (list) => {
 };
 const notFound = () => Object.assign(new Error("Playlist not found"), { response: { status: 404, data: { message: "Playlist not found" } } });
 
+// Quy tắc dùng chung với mockMode.js (VITE_USE_MOCK = auto | on | off):
+//  - on: luôn lưu cục bộ, không gọi backend
+//  - auto: gọi backend; chỉ lưu cục bộ khi backend chưa có endpoint / lỗi server / mất kết nối
+//  - off: không bao giờ lưu cục bộ (lỗi sẽ báo ra cho người dùng)
+// Lỗi 400/401/403/409... là backend đang trả lời thật nên được ném lại cho UI xử lý.
 const withFallback = async (remote, local) => {
+    if (MOCK_MODE === "on") return local();
     try {
         return await remote();
     } catch (err) {
-        if (!shouldFallback(err)) throw err;
+        if (!canFallback(err)) throw err;
         return local();
     }
 };
