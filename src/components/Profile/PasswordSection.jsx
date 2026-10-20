@@ -9,6 +9,7 @@ import {
   LIMITS,
 } from "../../utils/validators";
 import Button from "../Common/Button";
+import PasswordRules from "../Common/PasswordRules";
 import Field from "../Common/Field";
 import StatusBanner from "../Common/StatusBanner";
 
@@ -112,7 +113,7 @@ export default function PasswordSection() {
               maxLength={LIMITS.OTP_MAX}
               placeholder="••••••"
               value={form.otp}
-              onChange={(e) => setForm({ ...form, otp: e.target.value.replace(/\s/g, "") })}
+              onChange={(e) => setForm({ ...form, otp: e.target.value.replace(/\D/g, "") })}
             />
           </Field>
           <Field label={t("resetPassword.newPasswordLabel")} htmlFor="pf-new-pw" error={errors.newPassword}>
@@ -124,6 +125,7 @@ export default function PasswordSection() {
               onChange={set("newPassword")}
             />
           </Field>
+          <PasswordRules value={form.newPassword} />
           <Field
             label={t("resetPassword.confirmNewPasswordLabel")}
             htmlFor="pf-confirm-pw"

@@ -1,298 +1,246 @@
-import api from "./api";
-import {
-    mockSongs,
-    mockAlbums,
-    mockArtists,
-} from "./mockData";
+import api, { resolveAssetUrl } from "./api";
 import * as genreService from "./genreService";
-import { readJson, writeJson } from "./storage";
+import { getMeta } from "./songMetaService";
 import { placeholderCover } from "../utils/cover";
-import { getUploadedSongsByGenre, getAllUploadedSongs, getUploadedArtists } from "./songMetaService";
+import { Role } from "../utils/enums";
 
 // ============================================================================
-// songService.js
+// songService.js — API NGƯỜI NGHE (docs/song.md, UC20 – UC25 + lịch sử nghe)
 //
-// Nguyên tắc: LUÔN ưu tiên gọi API thật từ backend Spring Boot trước.
-// Nếu backend chưa có endpoint đó (404/501) hoặc request lỗi (mất mạng, 500,
-// CORS...), service sẽ tự fallback về mock data để giao diện không bị vỡ.
+// Chỉ dùng dữ liệu THẬT từ backend, KHÔNG còn mock / dữ liệu mẫu.
 //
-// => Khi backend cập nhật / bổ sung endpoint cho Song, Album, Artist, Search,
-//    Genre thì KHÔNG cần sửa gì ở đây hay ở phía component: lần gọi tiếp theo
-//    api.get(...) sẽ thành công và dữ liệu thật sẽ tự động được dùng thay cho
-//    mock, vì mock chỉ được dùng trong khối catch (khi request that bai).
+//   GET  /songs?page&size                  danh sách bài đã phát hành   (UC20)
+//   GET  /songs/search?keyword&page&size   tìm kiếm                     (UC21)
+//   GET  /songs/{id}                       chi tiết bài                 (UC22)
+//   POST /songs/{id}/play                  ghi nhận lượt nghe           (UC24)
+//   GET  /songs/artists/{id}?page&size     trang nghệ sĩ                (UC25)
+//   GET  /users/me/history                 nghe gần đây (tối đa 10)
+//
+// QUYỀN: mọi API trên đều yêu cầu ĐĂNG NHẬP (USER / ARTIST / ADMIN đều dùng được),
+// chưa đăng nhập -> 401. Backend chưa có API album / trending / popular artists /
+// thể loại, nên trang chủ được dựng từ danh sách bài đã phát hành.
 // ============================================================================
 
-// Chuẩn hoá 1 bài hát trả về từ backend (phòng khi backend đặt tên field khác
-// một chút, ví dụ artist.name thay vì artistName) để UI luôn nhận đúng shape.
-const normalizeSong = (song) => {
-    if (!song) return song;
+const PAGE_SIZE = 50; // backend ép size về 1–50
+const MAX_PAGES = 6; // chặn vòng lặp tải quá nhiều trang
+
+// ----------------------------------------------------------------------------
+// Chuyển SongResponse của backend -> shape UI dùng
+// SongResponse: { id, title, audioUrl, coverUrl, durationSeconds, playCount, releaseAt,
+//                 artistId, artistName, featuredArtists: [{ id, artistName }] }
+// ----------------------------------------------------------------------------
+export const toListenerSong = (s) => {
+    if (!s) return null;
+    const feat = (s.featuredArtists || []).filter((a) => a?.artistName);
+    const meta = getMeta(s.id);
     return {
-        id: song.id,
-        title: song.title,
-        artistId: song.artistId ?? song.artist?.id,
-        artistName: song.artistName ?? song.artist?.name,
-        albumId: song.albumId ?? song.album?.id,
-        albumTitle: song.albumTitle ?? song.album?.title,
-        coverUrl: song.coverUrl ?? song.imageUrl ?? song.album?.coverUrl,
-        duration: song.duration ?? song.durationInSeconds ?? 0,
-        audioUrl: song.audioUrl ?? song.fileUrl ?? song.url,
-        ...song,
+        id: s.id,
+        title: s.title,
+        artistId: s.artistId,
+        mainArtistName: s.artistName,
+        artistName: [s.artistName, ...feat.map((a) => a.artistName)].filter(Boolean).join(", "),
+        featuredArtists: feat,
+        albumTitle: meta?.albumTitle || "",
+        coverUrl: s.coverUrl ? resolveAssetUrl(s.coverUrl) : placeholderCover(s.title),
+        duration: s.durationSeconds ?? 0,
+        audioUrl: resolveAssetUrl(s.audioUrl),
+        playCount: s.playCount ?? 0,
+        releaseAt: s.releaseAt,
+        // Ưu tiên thể loại do backend trả (nếu sau này có), nếu không lấy từ metadata cục bộ.
+        // Luôn là 1 giá trị đơn: 1 bài chỉ thuộc 1 thể loại.
+        genreId: s.genreId != null ? String(s.genreId) : s.genre?.id != null ? String(s.genre.id) : meta?.genreId ?? null,
     };
 };
 
-const normalizeAlbum = (album) => {
-    if (!album) return album;
-    return {
-        id: album.id,
-        title: album.title,
-        artistId: album.artistId ?? album.artist?.id,
-        artistName: album.artistName ?? album.artist?.name,
-        coverUrl: album.coverUrl ?? album.imageUrl,
-        songs: Array.isArray(album.songs) ? album.songs.map(normalizeSong) : album.songs,
-        ...album,
-    };
-};
-
-const normalizeArtist = (artist) => {
-    if (!artist) return artist;
-    return {
-        id: artist.id,
-        name: artist.name,
-        avatarUrl: artist.avatarUrl ?? artist.imageUrl,
-        followers: artist.followers ?? artist.followerCount,
-        topSongs: Array.isArray(artist.topSongs) ? artist.topSongs.map(normalizeSong) : artist.topSongs,
-        albums: Array.isArray(artist.albums) ? artist.albums.map(normalizeAlbum) : artist.albums,
-        ...artist,
-    };
-};
-
-// Tìm kiếm không phân biệt hoa/thường và dấu tiếng Việt, dùng cho search mock.
 const normalizeText = (str = "") =>
-    str
-        .toString()
-        .toLowerCase()
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .replace(/đ/g, "d");
-
+    str.toString().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d");
 const matchesQuery = (text, query) => normalizeText(text).includes(normalizeText(query));
 
-// ----------------------------------------------------------------------------
-// Trang chủ
-// ----------------------------------------------------------------------------
+const toArtist = (id, name, avatarUrl) => ({
+    id,
+    name,
+    avatarUrl: avatarUrl ? resolveAssetUrl(avatarUrl) : placeholderCover(name),
+});
 
-// Lấy bài hát thịnh hành
-export const getTrendingSongs = async () => {
-    try {
-        const { data } = await api.get("/songs/trending");
-        return Array.isArray(data) ? data.map(normalizeSong) : data;
-    } catch (error) {
-        console.warn("Backend chưa có /songs/trending → dùng mock data");
-        return mockSongs;
+// Tải lần lượt các trang của 1 API trả PageResponse, gộp content lại.
+const fetchAllPages = async (path, params = {}, maxPages = MAX_PAGES) => {
+    const all = [];
+    for (let page = 0; page < maxPages; page += 1) {
+        const { data } = await api.get(path, { params: { ...params, page, size: PAGE_SIZE } });
+        all.push(...(data?.content || []));
+        if (page >= (data?.totalPages ?? 1) - 1) break;
     }
+    return all;
 };
 
-// Lấy album mới phát hành
-export const getNewReleases = async () => {
-    try {
-        const { data } = await api.get("/albums/new-releases");
-        return Array.isArray(data) ? data.map(normalizeAlbum) : data;
-    } catch (error) {
-        console.warn("Backend chưa có /albums/new-releases → dùng mock data");
-        return mockAlbums;
-    }
-};
-
-// Lấy nghệ sĩ nổi bật
-export const getPopularArtists = async () => {
-    try {
-        const { data } = await api.get("/artists/popular");
-        return Array.isArray(data) ? data.map(normalizeArtist) : data;
-    } catch (error) {
-        console.warn("Backend chưa có /artists/popular → dùng mock data");
-        return mockArtists;
-    }
-};
+// Khi lỗi 400 "... does not exist" của backend => coi như không có
+const isNotFound = (err) => err?.response?.status === 400;
 
 // ----------------------------------------------------------------------------
-// Chi tiết bài hát / album / nghệ sĩ
-// (Artist.jsx và Album.jsx cần các hàm này — trước đây bị thiếu nên khi bấm
-// vào 1 nghệ sĩ hoặc 1 album, component crash vì gọi hàm undefined → trang
-// trắng/đen. Nay đã bổ sung đầy đủ kèm fallback mock để không còn bị lỗi.)
+// Bài hát
 // ----------------------------------------------------------------------------
+export const getAllSongs = async () => (await fetchAllPages("/songs")).map(toListenerSong);
 
-// Lấy chi tiết 1 bài hát theo id
 export const getSongById = async (id) => {
     try {
         const { data } = await api.get(`/songs/${id}`);
-        return normalizeSong(data);
-    } catch (error) {
-        console.warn(`Backend chưa có /songs/${id} → dùng mock data`);
-        const song = mockSongs.find((s) => String(s.id) === String(id));
-        return song ? normalizeSong(song) : null;
+        return toListenerSong(data);
+    } catch (err) {
+        if (isNotFound(err)) return null;
+        throw err;
     }
 };
 
-// Lấy chi tiết 1 album theo id, kèm danh sách bài hát trong album
-export const getAlbumById = async (id) => {
-    try {
-        const { data } = await api.get(`/albums/${id}`);
-        return normalizeAlbum(data);
-    } catch (error) {
-        console.warn(`Backend chưa có /albums/${id} → dùng mock data`);
-        const album = mockAlbums.find((a) => String(a.id) === String(id));
-        if (!album) return null;
-        return normalizeAlbum({
-            ...album,
-            songs: mockSongs.filter((s) => s.albumId === album.id),
-        });
-    }
+// UC24 — gọi 1 lần khi BẮT ĐẦU phát. Lỗi không được làm dừng nhạc => nuốt lỗi.
+export const recordPlay = (songId) => api.post(`/songs/${songId}/play`).catch(() => {});
+
+// Lịch sử nghe gần đây: [{ song, playedAt }]
+export const getRecentHistory = async () => {
+    const { data } = await api.get("/users/me/history");
+    return (Array.isArray(data) ? data : [])
+        .filter((h) => h?.song)
+        .map((h) => ({ ...toListenerSong(h.song), playedAt: h.playedAt }));
 };
 
-// Lấy chi tiết 1 nghệ sĩ theo id, kèm bài hát nổi bật và album
+// ----------------------------------------------------------------------------
+// Nghệ sĩ
+// ----------------------------------------------------------------------------
+const avatarCache = new Map(); // artistId -> url (chỉ trong phiên hiện tại)
+
+// Trang nghệ sĩ: ArtistSongsResponse { artistId, artistName, bio, avatarUrl, songs: PageResponse }
+// Gồm bài nghệ sĩ là Artist chính HOẶC được feat. Nghệ sĩ mới chưa có bài vẫn trả về bình thường.
 export const getArtistById = async (id) => {
     try {
-        const { data } = await api.get(`/artists/${id}`);
-        return normalizeArtist(data);
-    } catch (error) {
-        console.warn(`Backend chưa có /artists/${id} → dùng mock data`);
-        const artist = mockArtists.find((a) => String(a.id) === String(id));
-        if (!artist) {
-            // Nghệ sĩ thật (chưa có API backend): dựng từ các bài đã duyệt trên máy này
-            const real = getUploadedArtists().find((a) => String(a.id) === String(id));
-            if (real) return normalizeArtist({ ...real, albums: [] });
-            // Nghệ sĩ mới chưa có bài nào: dùng thông tin đã thấy khi tìm kiếm
-            const seen = readJson(SEEN_KEY, {})[String(id)];
-            return seen ? normalizeArtist({ ...toArtist(seen.id, seen.name), topSongs: [], albums: [] }) : null;
+        let page = 0;
+        let info = null;
+        const songs = [];
+        // tải hết các trang bài hát (tối đa MAX_PAGES)
+        while (true) {
+            const { data } = await api.get(`/songs/artists/${id}`, { params: { page, size: PAGE_SIZE } });
+            info = info || data;
+            songs.push(...(data?.songs?.content || []));
+            page += 1;
+            if (page >= (data?.songs?.totalPages ?? 1) || page >= MAX_PAGES) break;
         }
-        return normalizeArtist({
+        const artist = toArtist(info.artistId, info.artistName, info.avatarUrl);
+        avatarCache.set(String(artist.id), artist.avatarUrl);
+        return {
             ...artist,
-            topSongs: mockSongs.filter((s) => s.artistId === artist.id),
-            albums: mockAlbums.filter((al) => al.artistId === artist.id),
-        });
+            bio: info.bio || "",
+            topSongs: songs.map(toListenerSong).sort((a, b) => b.playCount - a.playCount),
+        };
+    } catch (err) {
+        if (isNotFound(err)) return null; // "Artist does not exist"
+        throw err;
     }
 };
 
-// ----------------------------------------------------------------------------
-// Tìm kiếm & thể loại (Search.jsx cần getGenres() và search() — trước đây
-// chưa được export nên trang tìm kiếm bị crash khi mở /search hoặc gõ tìm
-// kiếm. Nay đã bổ sung, ưu tiên gọi backend thật, fallback lọc trên mock.)
-// ----------------------------------------------------------------------------
+// Bổ sung ảnh đại diện thật cho danh sách nghệ sĩ (mỗi nghệ sĩ 1 lần gọi trang nghệ sĩ nhỏ)
+const withAvatars = async (artists) =>
+    Promise.all(
+        artists.map(async (a) => {
+            const cached = avatarCache.get(String(a.id));
+            if (cached) return { ...a, avatarUrl: cached };
+            try {
+                const { data } = await api.get(`/songs/artists/${a.id}`, { params: { page: 0, size: 1 } });
+                const url = data?.avatarUrl ? resolveAssetUrl(data.avatarUrl) : a.avatarUrl;
+                avatarCache.set(String(a.id), url);
+                return { ...a, avatarUrl: url };
+            } catch {
+                return a;
+            }
+        })
+    );
 
-// Lấy danh sách thể loại nhạc (backend nếu có, + thể loại admin tự thêm)
+// Nghệ sĩ (chính + feat) rút ra từ danh sách bài; mặc định xếp theo tổng lượt nghe
+const artistsFromSongs = (songs, nameFilter = null) => {
+    const map = new Map();
+    const add = (id, name, plays) => {
+        if (id == null || !name) return;
+        if (nameFilter && !matchesQuery(name, nameFilter)) return;
+        const cur = map.get(String(id)) || { ...toArtist(id, name), plays: 0 };
+        cur.plays += plays;
+        map.set(String(id), cur);
+    };
+    songs.forEach((s) => {
+        add(s.artistId, s.mainArtistName, s.playCount);
+        s.featuredArtists.forEach((a) => add(a.id, a.artistName, s.playCount));
+    });
+    return [...map.values()].sort((a, b) => b.plays - a.plays);
+};
+
+// ----------------------------------------------------------------------------
+// Trang chủ — dựng từ các bài đã phát hành (backend chưa có API trending / album)
+// ----------------------------------------------------------------------------
+export const getHomeData = async () => {
+    const songs = await getAllSongs(); // đã sắp xếp: mới phát hành lên đầu
+    const trending = [...songs].filter((s) => s.playCount > 0).sort((a, b) => b.playCount - a.playCount).slice(0, 12);
+    const artists = await withAvatars(artistsFromSongs(songs).slice(0, 12));
+    return { newest: songs.slice(0, 12), trending, artists };
+};
+
+// ----------------------------------------------------------------------------
+// Thể loại — 1 bài CHỈ thuộc đúng 1 thể loại (so khớp chặt theo genreId của bài)
+// ----------------------------------------------------------------------------
 export const getGenres = () => genreService.getGenres();
 
-// Bài hát thuộc 1 thể loại: backend (GET /genres/{id}/songs) nếu có, nếu không thì mock
-// + các bài nghệ sĩ đã tải lên, đã được duyệt và phát hành (xem songMetaService).
 export const getSongsByGenre = async (genreId) => {
-    let base;
-    try {
-        const { data } = await api.get(`/genres/${genreId}/songs`);
-        const list = Array.isArray(data) ? data : data?.content || [];
-        base = list.map(normalizeSong);
-    } catch {
-        base = mockSongs.filter((s) => String(s.genreId) === String(genreId)).map(normalizeSong);
-    }
-    const seen = new Set(base.map((s) => String(s.id)));
-    const uploaded = getUploadedSongsByGenre(genreId).filter((s) => !seen.has(String(s.id)));
-    return [...base, ...uploaded];
+    const songs = await getAllSongs();
+    return songs.filter((s) => s.genreId != null && String(s.genreId) === String(genreId));
 };
 
-// Tìm kiếm bài hát / album / nghệ sĩ theo từ khoá.
-// Luôn trả về shape cố định { songs, albums, artists } để Search.jsx
-// không cần biết dữ liệu đến từ backend thật hay từ mock.
 // ----------------------------------------------------------------------------
-// Nghệ sĩ thật theo vai trò người đang tìm (backend chưa có API tìm kiếm cho người nghe):
-//   ARTIST : GET /artist/search-artists  (DB trực tiếp => nghệ sĩ mới được duyệt cũng thấy ngay)
-//   ADMIN  : GET /admin/users            (lọc role ARTIST đang ACTIVE theo nghệ danh)
-//   USER / khách: chưa có endpoint nào => chỉ thấy nghệ sĩ có bài đã biết (mock + bài đã duyệt)
+// Tìm kiếm — GET /songs/search tìm theo tên bài, nghệ danh chính và nghệ danh feat.
+// Backend chưa có API tìm nghệ sĩ cho người nghe, nên:
+//   * nghệ sĩ khớp tên được rút ra từ các bài tìm thấy;
+//   * ARTIST  : thêm GET /artist/search-artists (cả nghệ sĩ chưa có bài);
+//   * ADMIN   : thêm GET /admin/users (lọc ARTIST đang ACTIVE).
+// Lỗi của API bài hát được ném ra để trang Search hiển thị (401 = chưa đăng nhập, 429...).
 // ----------------------------------------------------------------------------
-const SEEN_KEY = "mw_seen_artists";
-const toArtist = (id, name, avatarUrl) => ({ id, name, avatarUrl: avatarUrl || placeholderCover(name) });
-
-const rememberArtists = (list) => {
-    const seen = readJson(SEEN_KEY, {});
-    list.forEach((a) => {
-        seen[String(a.id)] = { id: a.id, name: a.name };
-    });
-    writeJson(SEEN_KEY, seen);
-};
-
-const searchRealArtists = async (q, role) => {
+const searchExtraArtists = async (q, role) => {
     try {
-        let list = [];
-        if (role === "ARTIST") {
+        if (role === Role.ARTIST) {
             const { data } = await api.get("/artist/search-artists", { params: { keyword: q } });
-            list = (Array.isArray(data) ? data : []).map((a) => toArtist(a.id, a.artistName));
-        } else if (role === "ADMIN") {
+            return (Array.isArray(data) ? data : []).map((a) => toArtist(a.id, a.artistName));
+        }
+        if (role === Role.ADMIN) {
             const { data } = await api.get("/admin/users");
             const users = Array.isArray(data) ? data : data?.content || [];
-            list = users
+            return users
                 .filter((u) => u.role === "ARTIST" && u.accountStatus === "ACTIVE" && matchesQuery(u.artistName, q))
                 .map((u) => toArtist(u.id, u.artistName, u.avatarUrl));
         }
-        rememberArtists(list);
-        return list;
     } catch {
-        return [];
+        /* nguồn phụ: lỗi thì bỏ qua */
     }
-};
-
-const dedupeById = (list) => {
-    const seen = new Set();
-    return list.filter((a) => !seen.has(String(a.id)) && seen.add(String(a.id)));
+    return [];
 };
 
 export const search = async (query, { role } = {}) => {
     const q = (query || "").trim();
-    if (!q) return { songs: [], albums: [], artists: [] };
+    if (!q) return { songs: [], artists: [] };
 
-    try {
-        const { data } = await api.get("/search", { params: { q } });
-        return {
-            songs: (data.songs || []).map(normalizeSong),
-            albums: (data.albums || []).map(normalizeAlbum),
-            artists: (data.artists || []).map(normalizeArtist),
-        };
-    } catch (error) {
-        console.warn("Backend chưa có /search → tìm kiếm trên mock data + bài đã tải lên");
-        const uploaded = getAllUploadedSongs();
-        const uploadedSongs = uploaded
-            .filter(({ song, featured }) =>
-                [song.title, song.artistName, song.albumTitle, ...featured.map((a) => a.artistName)].some((v) =>
-                    matchesQuery(v, q)
-                )
-            )
-            .map(({ song }) => song);
-        const uploadedArtists = getUploadedArtists()
-            .filter((a) => matchesQuery(a.name, q))
-            .map((a) => toArtist(a.id, a.name, a.avatarUrl));
-        const realArtists = await searchRealArtists(q, role);
-        return {
-            songs: [
-                ...mockSongs.filter((s) => matchesQuery(s.title, q) || matchesQuery(s.artistName, q)),
-                ...uploadedSongs,
-            ],
-            albums: mockAlbums.filter(
-                (a) => matchesQuery(a.title, q) || matchesQuery(a.artistName, q)
-            ),
-            artists: dedupeById([
-                ...mockArtists.filter((a) => matchesQuery(a.name, q)),
-                ...realArtists,
-                ...uploadedArtists,
-            ]),
-        };
-    }
+    const [rawSongs, extra] = await Promise.all([
+        fetchAllPages("/songs/search", { keyword: q }, 3),
+        searchExtraArtists(q, role),
+    ]);
+    const songs = rawSongs.map(toListenerSong);
+
+    const seen = new Set();
+    const merged = [...artistsFromSongs(songs, q), ...extra].filter(
+        (a) => !seen.has(String(a.id)) && seen.add(String(a.id))
+    );
+    return { songs, artists: await withAvatars(merged.slice(0, 12)) };
 };
 
 export default {
-    getTrendingSongs,
-    getNewReleases,
-    getPopularArtists,
+    getAllSongs,
     getSongById,
-    getAlbumById,
     getArtistById,
+    getHomeData,
+    getRecentHistory,
     getGenres,
     getSongsByGenre,
+    recordPlay,
     search,
 };

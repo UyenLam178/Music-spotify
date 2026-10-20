@@ -10,6 +10,7 @@ import {
   LIMITS,
 } from "../../utils/validators";
 import Button from "../../components/Common/Button";
+import PasswordRules from "../../components/Common/PasswordRules";
 
 // UC04 -> UC02 + UC05: sau "Quên mật khẩu", người dùng nhập OTP nhận qua email
 // cùng mật khẩu mới. Backend kiểm tra và tiêu thụ OTP ngay trong resetPassword().
@@ -100,7 +101,7 @@ export default function ResetPassword() {
               maxLength={LIMITS.OTP_MAX}
               placeholder="••••••"
               value={form.otp}
-              onChange={(e) => setForm({ ...form, otp: e.target.value.replace(/\s/g, "") })}
+              onChange={(e) => setForm({ ...form, otp: e.target.value.replace(/\D/g, "") })}
             />
             {errors.otp && <span className="field-error">{errors.otp}</span>}
           </div>
@@ -115,6 +116,7 @@ export default function ResetPassword() {
             />
             {errors.newPassword && <span className="field-error">{errors.newPassword}</span>}
           </div>
+          <PasswordRules value={form.newPassword} />
           <div className="field">
             <label htmlFor="confirmPassword">{t("resetPassword.confirmNewPasswordLabel")}</label>
             <input

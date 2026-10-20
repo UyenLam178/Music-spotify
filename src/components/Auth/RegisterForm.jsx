@@ -10,6 +10,7 @@ import {
   validateConfirmPassword,
 } from "../../utils/validators";
 import Button from "../Common/Button";
+import PasswordRules from "../Common/PasswordRules";
 
 export default function RegisterForm() {
   const { t } = useTranslation();
@@ -88,6 +89,7 @@ export default function RegisterForm() {
         autoComplete: "new-password",
         placeholder: t("auth.createPasswordPlaceholder"),
       })}
+      <PasswordRules value={form.password} />
       {field("confirmPassword", t("auth.confirmPasswordLabel"), {
         type: "password",
         autoComplete: "new-password",

@@ -105,3 +105,19 @@ export const IconCheck = (p) => (
     <path d="M9.5 16.2 5.3 12l-1.4 1.4 5.6 5.6L20.1 8.4 18.7 7z" />
   </svg>
 );
+
+export const IconLyrics = (p) => (
+  <svg {...base} {...p}>
+    <path d="M4 5h16v2H4zm0 4h10v2H4zm0 4h16v2H4zm0 4h10v2H4z" />
+  </svg>
+);
+export const IconHistory = (p) => (
+  <svg {...base} {...p}>
+    <path d="M13 3a9 9 0 0 0-9 9H1l3.9 3.9L9 12H6a7 7 0 1 1 2.05 4.95l-1.42 1.42A9 9 0 1 0 13 3m-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8z" />
+  </svg>
+);
+export const IconHeadphones = (p) => (
+  <svg {...base} {...p}>
+    <path d="M12 3a9 9 0 0 0-9 9v7a2 2 0 0 0 2 2h2v-8H5v-1a7 7 0 0 1 14 0v1h-2v8h2a2 2 0 0 0 2-2v-7a9 9 0 0 0-9-9" />
+  </svg>
+);

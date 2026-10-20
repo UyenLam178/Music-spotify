@@ -1,9 +1,11 @@
+import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { usePlayer } from "../../context/PlayerContext";
 import { IconPlay, IconPause } from "../Common/Icons";
 
 export default function SongCard({ song, songList }) {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const { currentSong, isPlaying, playSong, togglePlay } = usePlayer();
   const isCurrent = currentSong?.id === song.id;
 
@@ -20,7 +22,11 @@ export default function SongCard({ song, songList }) {
           {isCurrent && isPlaying ? <IconPause /> : <IconPlay />}
         </button>
       </div>
-      <p className="media-card-title" title={song.title}>
+      <p
+        className="media-card-title media-card-title-link"
+        title={song.title}
+        onClick={() => navigate(`/song/${song.id}`)}
+      >
         {song.title}
       </p>
       <p className="media-card-sub">{song.artistName}</p>

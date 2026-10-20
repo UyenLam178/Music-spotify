@@ -1,9 +1,14 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { tokenStorage } from "../services/api";
+import { useAuth } from "./AuthContext";
+import { recordPlay } from "../services/songService";
 
 const PlayerContext = createContext(null);
 
 export function PlayerProvider({ children }) {
-  const audioRef = useRef(new Audio());
+  const { user } = useAuth();
+  const audioRef = useRef(null);
+  if (audioRef.current === null) audioRef.current = new Audio();
   const [queue, setQueue] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(-1);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -73,12 +78,46 @@ export function PlayerProvider({ children }) {
     audioRef.current.volume = volume;
   }, [volume]);
 
+  // Giữ trạng thái nút Play/Pause khớp với phần tử audio thật
+  // (trình duyệt có thể tự dừng khi đổi tab / chặn autoplay / file lỗi).
+  useEffect(() => {
+    const audio = audioRef.current;
+    const onPause = () => !audio.ended && setIsPlaying(false);
+    const onPlay = () => setIsPlaying(true);
+    audio.addEventListener("pause", onPause);
+    audio.addEventListener("play", onPlay);
+    audio.addEventListener("error", onPause);
+    return () => {
+      audio.removeEventListener("pause", onPause);
+      audio.removeEventListener("play", onPlay);
+      audio.removeEventListener("error", onPause);
+    };
+  }, []);
+
+  // Đăng xuất / hết phiên (user = null): dừng nhạc hẳn và xóa hàng đợi
+  useEffect(() => {
+    if (user) return;
+    const audio = audioRef.current;
+    audio.pause();
+    audio.removeAttribute("src");
+    audio.load();
+    setQueue([]);
+    setCurrentIndex(-1);
+    setIsPlaying(false);
+    setProgress(0);
+    setDuration(0);
+  }, [user]);
+
   useEffect(() => {
     if (!currentSong) return;
     const audio = audioRef.current;
     audio.src = currentSong.audioUrl;
     setProgress(0);
-    if (isPlaying) audio.play().catch(() => {});
+    if (isPlaying) {
+      audio.play().catch(() => {});
+      // UC24: ghi nhận 1 lượt nghe khi BẮT ĐẦU phát (server tự chống spam 30 giây)
+      if (tokenStorage.getToken()) recordPlay(currentSong.id);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentSong?.id]);
 

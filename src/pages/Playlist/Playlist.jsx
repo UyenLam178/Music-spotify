@@ -101,7 +101,7 @@ export default function Playlist() {
                         <span></span>
                     </div>
                     {songs.map((song, i) => (
-                        <SongRow key={song.id} song={song} index={i} songList={songs} />
+                        <SongRow key={song.id} song={song} index={i} showPlays songList={songs} />
                     ))}
                 </div>
             )}

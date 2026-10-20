@@ -11,8 +11,9 @@ import Library from "./pages/Library/Library";
 import Genre from "./pages/Genre/Genre";
 import Liked from "./pages/Liked/Liked";
 import Playlist from "./pages/Playlist/Playlist";
-import Album from "./pages/Album/Album";
 import Artist from "./pages/Artist/Artist";
+import Song from "./pages/Song/Song";
+import History from "./pages/History/History";
 import Profile from "./pages/Profile/Profile";
 import Admin from "./pages/Admin/Admin";
 import ArtistStudio from "./pages/ArtistStudio/ArtistStudio";
@@ -49,8 +50,9 @@ function App() {
                 <Route path="/genre/:id" element={<Genre />} />
                 <Route path="/liked" element={<Liked />} />
                 <Route path="/playlist/:id" element={<Playlist />} />
-                <Route path="/album/:id" element={<Album />} />
                 <Route path="/artist/:id" element={<Artist />} />
+                <Route path="/song/:id" element={<Song />} />
+                <Route path="/history" element={<History />} />
                 <Route
                     path="/profile"
                     element={

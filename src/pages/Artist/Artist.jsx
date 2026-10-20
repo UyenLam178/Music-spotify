@@ -4,32 +4,50 @@ import { useTranslation } from "react-i18next";
 import * as songService from "../../services/songService";
 import { usePlayer } from "../../context/PlayerContext";
 import SongRow from "../../components/Music/SongRow";
-import AlbumCard from "../../components/Music/AlbumCard";
 import Loading from "../../components/Common/Loading";
+import LoginPrompt from "../../components/Common/LoginPrompt";
+import { useAuth } from "../../context/AuthContext";
+import { extractErrorMessage } from "../../services/api";
 import { IconPlay } from "../../components/Common/Icons";
 
 export default function Artist() {
-    const { t, i18n } = useTranslation();
+    const { t } = useTranslation();
+    const { isAuthenticated } = useAuth();
     const { id } = useParams();
     const { playQueue } = usePlayer();
     const [artist, setArtist] = useState(null);
 
-    useEffect(() => {
-        setArtist(null);
-        songService.getArtistById(id).then((a) => setArtist(a || false));
-    }, [id]);
+    const [error, setError] = useState("");
 
+    useEffect(() => {
+        if (!isAuthenticated) return undefined;
+        let cancelled = false;
+        setArtist(null);
+        setError("");
+        songService
+            .getArtistById(id)
+            .then((a) => !cancelled && setArtist(a || false))
+            .catch((err) => {
+                if (cancelled) return;
+                setError(extractErrorMessage(err));
+                setArtist(false);
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, [id, isAuthenticated]);
+
+    if (!isAuthenticated) return <LoginPrompt />;
     if (artist === null) return <Loading full />;
     if (artist === false) {
         return (
             <div className="empty-state">
-                <h2>{t("common.noResults")}</h2>
+                <h2>{error || t("artist.notFound")}</h2>
             </div>
         );
     }
 
     const topSongs = artist.topSongs || [];
-    const albums = artist.albums || [];
 
     return (
         <div>
@@ -38,11 +56,7 @@ export default function Artist() {
                 <div className="artist-banner-overlay">
                     <span className="artist-banner-label">{t("artist.label")}</span>
                     <h1 className="artist-banner-name">{artist.name}</h1>
-                    {artist.followers != null && (
-                        <span className="artist-banner-followers">
-              {artist.followers.toLocaleString(i18n.language === "en" ? "en-US" : "vi-VN")} {t("artist.followers")}
-            </span>
-                    )}
+                    {artist.bio && <span className="artist-banner-followers">{artist.bio}</span>}
                 </div>
             </div>
 
@@ -56,6 +70,8 @@ export default function Artist() {
                 </button>
             </div>
 
+            {topSongs.length === 0 && <p className="sb-hint">{t("artist.noSongs")}</p>}
+
             {topSongs.length > 0 && (
                 <section className="section">
                     <div className="section-head">
@@ -63,20 +79,7 @@ export default function Artist() {
                     </div>
                     <div className="song-list">
                         {topSongs.map((song, i) => (
-                            <SongRow key={song.id} song={song} index={i} songList={topSongs} />
-                        ))}
-                    </div>
-                </section>
-            )}
-
-            {albums.length > 0 && (
-                <section className="section">
-                    <div className="section-head">
-                        <h2>{t("search.albums")}</h2>
-                    </div>
-                    <div className="card-grid">
-                        {albums.map((album) => (
-                            <AlbumCard key={album.id} album={album} />
+                            <SongRow key={song.id} song={song} index={i} showPlays songList={topSongs} />
                         ))}
                     </div>
                 </section>

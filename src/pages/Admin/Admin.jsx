@@ -9,6 +9,7 @@ import Button from "../../components/Common/Button";
 import Loading from "../../components/Common/Loading";
 import StatusBanner from "../../components/Common/StatusBanner";
 import GenreModal from "../../components/Admin/GenreModal";
+import SongModeration from "../../components/Admin/SongModeration";
 
 // Trang quản trị (chỉ ADMIN, xem App.jsx):
 //   Tab "Người dùng"       : xem danh sách, khóa / mở khóa, gán vai trò   (getAllUsers, lock/unlockAccount, assignRole)
@@ -22,6 +23,7 @@ export default function Admin() {
   const [requests, setRequests] = useState([]);
   const [genres, setGenres] = useState([]);
   const [genreModal, setGenreModal] = useState(false);
+  const [pendingSongs, setPendingSongs] = useState(null);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState(null);
   const [status, setStatus] = useState({ type: "", message: "" });
@@ -113,13 +115,23 @@ export default function Admin() {
         >
           {t("adminGenre.tab")} ({genres.length})
         </button>
+        <button
+          role="tab"
+          aria-selected={tab === "songs"}
+          className={tab === "songs" ? "active" : ""}
+          onClick={() => setTab("songs")}
+        >
+          {t("adminSong.tab")}{pendingSongs != null ? ` (${pendingSongs})` : ""}
+        </button>
       </div>
 
       <StatusBanner status={status} />
 
       {tab === "users" && <p className="sb-hint admin-note">{t("admin.roleNote")}</p>}
 
-      {tab === "genres" ? (
+      {tab === "songs" ? (
+        <SongModeration onPendingCount={setPendingSongs} />
+      ) : tab === "genres" ? (
         <>
           <div className="studio-head">
             <p className="sb-hint admin-note" style={{ margin: 0 }}>{t("adminGenre.note")}</p>

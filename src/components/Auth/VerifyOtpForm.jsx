@@ -65,7 +65,7 @@ export default function VerifyOtpForm() {
           maxLength={LIMITS.OTP_MAX}
           placeholder="••••••"
           value={otp}
-          onChange={(e) => setOtp(e.target.value.replace(/\s/g, ""))}
+          onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
         />
       </div>
 

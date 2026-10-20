@@ -2,15 +2,16 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../../context/AuthContext";
 import * as songService from "../../services/songService";
+import { extractErrorMessage } from "../../services/api";
 import SongCard from "../../components/Music/SongCard";
-import AlbumCard from "../../components/Music/AlbumCard";
 import ArtistCard from "../../components/Music/ArtistCard";
 import Loading from "../../components/Common/Loading";
+import LoginPrompt from "../../components/Common/LoginPrompt";
 
 export default function Home() {
     const { t } = useTranslation();
-    const { user } = useAuth();
-    const [data, setData] = useState(null);
+    const { user, isAuthenticated } = useAuth();
+    const [state, setState] = useState({ loading: true, data: null, error: "" });
 
     const greeting = () => {
         const h = new Date().getHours();
@@ -20,14 +21,23 @@ export default function Home() {
     };
 
     useEffect(() => {
-        Promise.all([
-            songService.getTrendingSongs(),
-            songService.getNewReleases(),
-            songService.getPopularArtists(),
-        ]).then(([trending, releases, artists]) => setData({ trending, releases, artists }));
-    }, []);
+        if (!isAuthenticated) return undefined;
+        let cancelled = false;
+        // Lịch sử nghe là chức năng phụ: lỗi thì bỏ qua, không làm hỏng trang chủ
+        Promise.all([songService.getHomeData(), songService.getRecentHistory().catch(() => [])])
+            .then(([home, recent]) => !cancelled && setState({ loading: false, data: { ...home, recent }, error: "" }))
+            .catch((err) => !cancelled && setState({ loading: false, data: null, error: extractErrorMessage(err) }));
+        return () => {
+            cancelled = true;
+        };
+    }, [isAuthenticated]);
 
-    if (!data) return <Loading full />;
+    if (!isAuthenticated) return <LoginPrompt />;
+    if (state.loading) return <Loading full />;
+    if (state.error) return <p className="form-error-banner">{state.error}</p>;
+
+    const { newest, trending, artists, recent } = state.data;
+    const empty = !newest.length;
 
     return (
         <div>
@@ -35,38 +45,59 @@ export default function Home() {
                 {greeting()}{user ? `, ${user.fullName || user.username}` : ""}
             </h1>
 
-            <section className="section">
-                <div className="section-head">
-                    <h2>{t("home.trendingSongs")}</h2>
-                </div>
-                <div className="card-grid">
-                    {data.trending.map((song) => (
-                        <SongCard key={song.id} song={song} songList={data.trending} />
-                    ))}
-                </div>
-            </section>
+            {empty && <p className="sb-hint">{t("home.noSongs")}</p>}
 
-            <section className="section">
-                <div className="section-head">
-                    <h2>{t("home.newAlbums")}</h2>
-                </div>
-                <div className="card-grid">
-                    {data.releases.map((album) => (
-                        <AlbumCard key={album.id} album={album} />
-                    ))}
-                </div>
-            </section>
+            {recent.length > 0 && (
+                <section className="section">
+                    <div className="section-head">
+                        <h2>{t("home.recentlyPlayed")}</h2>
+                    </div>
+                    <div className="card-grid">
+                        {recent.map((song) => (
+                            <SongCard key={song.id} song={song} songList={recent} />
+                        ))}
+                    </div>
+                </section>
+            )}
 
-            <section className="section">
-                <div className="section-head">
-                    <h2>{t("home.featuredArtists")}</h2>
-                </div>
-                <div className="circle-grid">
-                    {data.artists.map((artist) => (
-                        <ArtistCard key={artist.id} artist={artist} />
-                    ))}
-                </div>
-            </section>
+            {newest.length > 0 && (
+                <section className="section">
+                    <div className="section-head">
+                        <h2>{t("home.newReleases")}</h2>
+                    </div>
+                    <div className="card-grid">
+                        {newest.map((song) => (
+                            <SongCard key={song.id} song={song} songList={newest} />
+                        ))}
+                    </div>
+                </section>
+            )}
+
+            {trending.length > 0 && (
+                <section className="section">
+                    <div className="section-head">
+                        <h2>{t("home.trendingSongs")}</h2>
+                    </div>
+                    <div className="card-grid">
+                        {trending.map((song) => (
+                            <SongCard key={song.id} song={song} songList={trending} />
+                        ))}
+                    </div>
+                </section>
+            )}
+
+            {artists.length > 0 && (
+                <section className="section">
+                    <div className="section-head">
+                        <h2>{t("home.featuredArtists")}</h2>
+                    </div>
+                    <div className="circle-grid">
+                        {artists.map((artist) => (
+                            <ArtistCard key={artist.id} artist={artist} />
+                        ))}
+                    </div>
+                </section>
+            )}
         </div>
     );
 }

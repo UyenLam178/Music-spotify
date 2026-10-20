@@ -99,4 +99,4 @@ Frontend chỉ hiện trang `/admin` và mục "Quản trị" trong menu khi `ro
 | Chưa có | Trang `/verify-otp`, mục "Trở thành nghệ sĩ" / hồ sơ nghệ sĩ, trang `/admin`, phân quyền theo `role` |
 
 Phần nhạc (bài hát, album, nghệ sĩ, playlist, tìm kiếm) không thuộc sơ đồ này nên giữ nguyên;
-các service nhạc vẫn fallback về `mockData` khi backend chưa có endpoint.
+các service nhạc chỉ dùng dữ liệu thật từ backend (đã bỏ hoàn toàn mock). Thể loại và album hiện do frontend lưu cục bộ vì backend chưa có.

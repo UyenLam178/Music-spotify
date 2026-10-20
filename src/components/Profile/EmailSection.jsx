@@ -103,7 +103,7 @@ export default function EmailSection() {
               maxLength={LIMITS.OTP_MAX}
               placeholder="••••••"
               value={otp}
-              onChange={(e) => setOtp(e.target.value.replace(/\s/g, ""))}
+              onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
             />
           </Field>
           <div style={{ display: "flex", gap: 12 }}>

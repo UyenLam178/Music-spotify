@@ -1,3 +1,4 @@
+import { useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { usePlayer } from "../../context/PlayerContext";
 import {
@@ -9,6 +10,7 @@ import {
   IconRepeat,
   IconVolume,
   IconVolumeMute,
+  IconLyrics,
 } from "../Common/Icons";
 import LikeButton from "../Common/LikeButton";
 
@@ -23,6 +25,8 @@ const formatTime = (sec = 0) => {
 
 export default function MusicPlayer() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+  const location = useLocation();
   const {
     currentSong,
     isPlaying,
@@ -51,9 +55,16 @@ export default function MusicPlayer() {
   return (
     <footer className="player-bar">
       <div className="player-now-playing">
-        <img src={currentSong.coverUrl} alt={currentSong.title} className="player-cover" />
+        <img
+          src={currentSong.coverUrl}
+          alt={currentSong.title}
+          className="player-cover player-link"
+          onClick={() => navigate(`/song/${currentSong.id}`)}
+        />
         <div className="player-track-meta">
-          <span className="player-track-title">{currentSong.title}</span>
+          <span className="player-track-title player-link" onClick={() => navigate(`/song/${currentSong.id}`)}>
+            {currentSong.title}
+          </span>
           <span className="player-track-artist">{currentSong.artistName}</span>
         </div>
         <LikeButton song={currentSong} />
@@ -101,6 +112,14 @@ export default function MusicPlayer() {
       </div>
 
       <div className="player-volume">
+        <button
+          className={`btn-icon ${location.pathname === `/song/${currentSong.id}` ? "control-active" : ""}`}
+          onClick={() => navigate(`/song/${currentSong.id}`)}
+          aria-label={t("lyrics.title")}
+          title={t("lyrics.title")}
+        >
+          <IconLyrics />
+        </button>
         <button className="btn-icon" onClick={() => setVolume(volume > 0 ? 0 : 0.8)}>
           {volume > 0 ? <IconVolume /> : <IconVolumeMute />}
         </button>

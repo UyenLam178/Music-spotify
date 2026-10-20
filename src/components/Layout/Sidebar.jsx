@@ -12,6 +12,7 @@ import {
   IconLibrary,
   IconPlus,
   IconHeart,
+  IconHistory,
 } from "../Common/Icons";
 
 import LanguageSwitcher from "../Common/LanguageSwitcher";
@@ -185,6 +186,11 @@ export default function Sidebar() {
           <NavLink to="/liked" className={navItemClass}>
             <IconHeart />
             <span>{t("common.likedSongs")}</span>
+          </NavLink>
+
+          <NavLink to="/history" className={navItemClass}>
+            <IconHistory />
+            <span>{t("history.title")}</span>
           </NavLink>
         </nav>
 

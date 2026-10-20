@@ -12,7 +12,7 @@ const formatDuration = (sec = 0) => {
   return `${m}:${s}`;
 };
 
-export default function SongRow({ song, index, songList, onAddToPlaylist }) {
+export default function SongRow({ song, index, songList, onAddToPlaylist, showPlays = false, playedAt = null }) {
   const { t } = useTranslation();
   const { currentSong, isPlaying, playSong, togglePlay } = usePlayer();
   const navigate = useNavigate();
@@ -24,7 +24,7 @@ export default function SongRow({ song, index, songList, onAddToPlaylist }) {
   };
 
   return (
-    <div className={`song-row${isCurrent ? " active" : ""}`} onDoubleClick={handlePlay}>
+    <div className={`song-row${isCurrent ? " active" : ""}${showPlays ? " with-plays" : ""}`} onDoubleClick={handlePlay}>
       <div className="song-row-index" onClick={handlePlay}>
         {isCurrent && isPlaying ? (
           <IconPause className="song-row-icon" />
@@ -39,7 +39,16 @@ export default function SongRow({ song, index, songList, onAddToPlaylist }) {
       <div className="song-row-info" onClick={handlePlay}>
         <img src={song.coverUrl} alt="" />
         <div>
-          <p className="song-row-title">{song.title}</p>
+          <p
+            className="song-row-title song-row-title-link"
+            title={t("songPage.viewDetail")}
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate(`/song/${song.id}`);
+            }}
+          >
+            {song.title}
+          </p>
           <p
             className="song-row-artist"
             onClick={(e) => {
@@ -52,7 +61,10 @@ export default function SongRow({ song, index, songList, onAddToPlaylist }) {
         </div>
       </div>
 
-      <div className="song-row-album">{song.albumTitle}</div>
+      <div className="song-row-album">
+        {playedAt ? new Date(playedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : song.albumTitle}
+      </div>
+      {showPlays && <div className="song-row-plays">{(song.playCount ?? 0).toLocaleString()}</div>}
 
       <div className="song-row-actions">
         <LikeButton song={song} />
