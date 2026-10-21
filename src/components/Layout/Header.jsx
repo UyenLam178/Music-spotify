@@ -7,7 +7,7 @@ import { Role } from "../../utils/enums";
 import { IconChevronDown, IconUser, IconLogout } from "../Common/Icons";
 import SearchBar from "../Search/SearchBar";
 
-export default function Header() {
+export default function Header({ onMenuClick }) {
   const { t } = useTranslation();
   const { isAuthenticated, user, logout } = useAuth();
   const navigate = useNavigate();
@@ -31,6 +31,9 @@ export default function Header() {
   return (
     <header className="app-header">
       <div className="header-left">
+        <button className="btn-icon header-menu-btn" onClick={onMenuClick} aria-label={t("header.menu")}>
+          ☰
+        </button>
         <div className="nav-arrows">
           <button className="btn-icon" onClick={() => navigate(-1)} aria-label={t("header.back")}>
             ‹

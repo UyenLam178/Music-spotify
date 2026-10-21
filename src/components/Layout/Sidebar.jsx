@@ -23,7 +23,7 @@ import { Role } from "../../utils/enums";
 import * as playlistService
   from "../../services/playlistService";
 
-export default function Sidebar() {
+export default function Sidebar({ open = false, onClose }) {
   const { t } = useTranslation();
 
   const {
@@ -130,7 +130,13 @@ export default function Sidebar() {
       };
 
   return (
-      <aside className="sidebar">
+      <aside
+          className={`sidebar${open ? " open" : ""}`}
+          onClick={(e) => {
+            // Bấm vào 1 liên kết trong ngăn kéo (điện thoại) -> đóng lại
+            if (e.target.closest("a")) onClose?.();
+          }}
+      >
         <div className="sb-brand">
           <span className="sb-logo-dot" />
 

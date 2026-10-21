@@ -121,3 +121,24 @@ export const IconHeadphones = (p) => (
     <path d="M12 3a9 9 0 0 0-9 9v7a2 2 0 0 0 2 2h2v-8H5v-1a7 7 0 0 1 14 0v1h-2v8h2a2 2 0 0 0 2-2v-7a9 9 0 0 0-9-9" />
   </svg>
 );
+
+export const IconQueue = (p) => (
+  <svg {...base} {...p}>
+    <path d="M3 6h12v2H3zm0 4h12v2H3zm0 4h8v2H3zm13 0h2v3h3v2h-3v3h-2v-3h-3v-2h3z" />
+  </svg>
+);
+export const IconShare = (p) => (
+  <svg {...base} {...p}>
+    <path d="M12 3 7.5 7.5l1.4 1.4L11 6.8V15h2V6.8l2.1 2.1 1.4-1.4zM5 11v9h14v-9h-2v7H7v-7z" />
+  </svg>
+);
+export const IconInfo = (p) => (
+  <svg {...base} {...p}>
+    <path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20m0 2a8 8 0 1 1 0 16 8 8 0 0 1 0-16m-1 6v7h2v-7zm0-3v2h2V7z" />
+  </svg>
+);
+export const IconNowPlaying = (p) => (
+  <svg {...base} {...p}>
+    <path d="M3 4h18a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1m1 2v12h10V6zm12 0v12h4V6zm-9 3h4v4H7z" />
+  </svg>
+);

@@ -14,6 +14,7 @@ import Modal from "../../components/Common/Modal";
 import StatusBanner from "../../components/Common/StatusBanner";
 import SongWizard from "../../components/Studio/SongWizard";
 import LyricsEditor from "../../components/Studio/LyricsEditor";
+import VideoEditor from "../../components/Studio/VideoEditor";
 import { getLyrics } from "../../services/lyricsService";
 
 // Nhãn trạng thái theo SongManageResponse (xem chú thích trong DTO backend)
@@ -202,6 +203,9 @@ export default function ArtistStudio() {
                         <Button size="sm" variant="outline" disabled={busy || !s.audioUrl} onClick={() => setModal({ kind: "lyrics", song: s })}>
                           {getLyrics(s.id) ? t("lyrics.editor.editBtn") : t("lyrics.editor.addBtn")}
                         </Button>
+                        <Button size="sm" variant="outline" disabled={busy || !s.audioUrl} onClick={() => setModal({ kind: "video", song: s })}>
+                          {t("songVideo.btn")}
+                        </Button>
                         {canSchedule && (
                           <Button size="sm" variant="outline" disabled={busy} onClick={() => setModal({ kind: "schedule", song: s })}>
                             {t("studio.schedule")}
@@ -235,6 +239,9 @@ export default function ArtistStudio() {
       )}
       {modal?.kind === "lyrics" && (
         <LyricsEditor song={modal.song} onClose={() => setModal(null)} onSaved={afterSave} />
+      )}
+      {modal?.kind === "video" && (
+        <VideoEditor song={modal.song} onClose={() => setModal(null)} onSaved={afterSave} />
       )}
       {modal?.kind === "schedule" && (
         <ScheduleModal song={modal.song} onClose={() => setModal(null)} onSaved={afterSave} />

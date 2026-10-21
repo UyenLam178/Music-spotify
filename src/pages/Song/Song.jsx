@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useAuth } from "../../context/AuthContext";
 import { usePlayer } from "../../context/PlayerContext";
 import * as songService from "../../services/songService";
-import { getLyrics } from "../../services/lyricsService";
+import { getLyrics, LYRICS_CHANGED_EVENT } from "../../services/lyricsService";
 import { extractErrorMessage } from "../../services/api";
 import { IconPlay, IconPause, IconHeadphones } from "../../components/Common/Icons";
 import LikeButton from "../../components/Common/LikeButton";
@@ -36,7 +36,18 @@ export default function Song() {
     };
   }, [id, isAuthenticated]);
 
-  const lyrics = useMemo(() => getLyrics(id), [id]);
+  const [lyricsVersion, setLyricsVersion] = useState(0);
+  useEffect(() => {
+    const bump = () => setLyricsVersion((v) => v + 1);
+    window.addEventListener(LYRICS_CHANGED_EVENT, bump);
+    window.addEventListener("storage", bump);
+    return () => {
+      window.removeEventListener(LYRICS_CHANGED_EVENT, bump);
+      window.removeEventListener("storage", bump);
+    };
+  }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const lyrics = useMemo(() => getLyrics(id), [id, lyricsVersion]);
 
   if (!isAuthenticated) return <LoginPrompt />;
   if (state.loading) return <Loading full />;

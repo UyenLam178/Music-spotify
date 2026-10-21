@@ -3,6 +3,16 @@ import * as authService from "../services/authService";
 import * as userService from "../services/userService";
 import { tokenStorage } from "../services/api";
 import { getTokenExpiryMs } from "../utils/jwt";
+import { isIdleExpired, touchActivity } from "../services/session";
+
+// Quá 7 ngày không dùng web -> xoá phiên (người dùng phải đăng nhập lại)
+const dropSessionIfIdle = () => {
+  if (tokenStorage.getToken() && isIdleExpired()) {
+    tokenStorage.clear();
+    return true;
+  }
+  return false;
+};
 
 const AuthContext = createContext(null);
 
@@ -12,7 +22,10 @@ const AuthContext = createContext(null);
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   // Không có token thì không cần chờ backend => không hiện màn hình loading
-  const [isLoading, setIsLoading] = useState(() => !!tokenStorage.getToken());
+  const [isLoading, setIsLoading] = useState(() => {
+    dropSessionIfIdle();
+    return !!tokenStorage.getToken();
+  });
 
   // Có token trong localStorage -> hỏi backend "tôi là ai" để khôi phục phiên.
   const loadCurrentUser = useCallback(async () => {
@@ -39,6 +52,24 @@ export function AuthProvider({ children }) {
     window.addEventListener("mw:auth-expired", handleExpired);
     return () => window.removeEventListener("mw:auth-expired", handleExpired);
   }, [loadCurrentUser]);
+
+  // Ghi nhận hoạt động để làm mới mốc 7 ngày; quay lại tab sau thời gian dài thì kiểm tra lại.
+  useEffect(() => {
+    if (!user) return undefined;
+    const onActivity = () => touchActivity();
+    const onVisible = () => {
+      if (document.visibilityState !== "visible") return;
+      if (dropSessionIfIdle()) setUser(null);
+      else touchActivity();
+    };
+    const events = ["pointerdown", "keydown", "scroll", "touchstart"];
+    events.forEach((e) => window.addEventListener(e, onActivity, { passive: true, capture: true }));
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      events.forEach((e) => window.removeEventListener(e, onActivity, { capture: true }));
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [user]);
 
   // Hẹn giờ tự đăng xuất đúng lúc JWT hết hạn (không phải đợi request kế tiếp bị 401).
   // Phụ thuộc vào `user`: login/logout thì token đổi nên hẹn lại.

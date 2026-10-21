@@ -11,6 +11,7 @@ import {
   IconVolume,
   IconVolumeMute,
   IconLyrics,
+  IconNowPlaying,
 } from "../Common/Icons";
 import LikeButton from "../Common/LikeButton";
 
@@ -42,6 +43,8 @@ export default function MusicPlayer() {
     next,
     prev,
     seek,
+    panelOpen,
+    setPanelOpen,
   } = usePlayer();
 
   if (!currentSong) {
@@ -113,14 +116,23 @@ export default function MusicPlayer() {
 
       <div className="player-volume">
         <button
-          className={`btn-icon ${location.pathname === `/song/${currentSong.id}` ? "control-active" : ""}`}
+          className={`btn-icon np-toggle ${panelOpen ? "control-active" : ""}`}
+          onClick={() => setPanelOpen((o) => !o)}
+          aria-label={t("nowPlaying.toggle")}
+          title={t("nowPlaying.toggle")}
+          aria-pressed={panelOpen}
+        >
+          <IconNowPlaying />
+        </button>
+        <button
+          className={`btn-icon player-extra ${location.pathname === `/song/${currentSong.id}` ? "control-active" : ""}`}
           onClick={() => navigate(`/song/${currentSong.id}`)}
           aria-label={t("lyrics.title")}
           title={t("lyrics.title")}
         >
           <IconLyrics />
         </button>
-        <button className="btn-icon" onClick={() => setVolume(volume > 0 ? 0 : 0.8)}>
+        <button className="btn-icon player-extra" onClick={() => setVolume(volume > 0 ? 0 : 0.8)}>
           {volume > 0 ? <IconVolume /> : <IconVolumeMute />}
         </button>
         <input
@@ -130,7 +142,7 @@ export default function MusicPlayer() {
           step={0.01}
           value={volume}
           onChange={(e) => setVolume(Number(e.target.value))}
-          className="progress-slider volume-slider"
+          className="progress-slider volume-slider player-extra"
         />
       </div>
     </footer>

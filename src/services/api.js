@@ -1,6 +1,7 @@
 import axios from "axios";
 import i18n from "i18next";
 import { isTokenExpired } from "../utils/jwt";
+import { clearActivity, touchActivity } from "./session";
 
 // ---------------------------------------------------------------------------
 // Axios instance dùng chung cho toàn bộ frontend.
@@ -18,9 +19,13 @@ const LEGACY_REFRESH_KEY = "mw_refresh_token";
 // 1 token (không có refresh token) => chỉ lưu 1 JWT.
 export const tokenStorage = {
     getToken: () => localStorage.getItem(TOKEN_KEY),
-    setToken: (token) => localStorage.setItem(TOKEN_KEY, token),
+    setToken: (token) => {
+        localStorage.setItem(TOKEN_KEY, token);
+        touchActivity(true); // bắt đầu tính 7 ngày không hoạt động từ lúc đăng nhập
+    },
     clear: () => {
         localStorage.removeItem(TOKEN_KEY);
+        clearActivity();
         localStorage.removeItem(LEGACY_REFRESH_KEY);
     },
 };
@@ -34,6 +39,7 @@ const api = axios.create({
 api.interceptors.request.use((config) => {
     const token = tokenStorage.getToken();
     if (token) {
+        touchActivity(); // gọi API = đang dùng web
         // Token đã hết hạn (đọc "exp" trong payload) -> khỏi gửi lên server, xoá phiên luôn.
         if (isTokenExpired(token)) {
             tokenStorage.clear();

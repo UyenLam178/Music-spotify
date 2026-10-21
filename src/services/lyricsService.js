@@ -9,7 +9,8 @@ import { readJson, writeJson } from "./storage";
 //
 //     mw_song_lyrics = { [songId]: { lines: [{ time: number|null, text: string }], updatedAt } }
 //
-// time = giây (có phần thập phân). Bài có đủ mốc thời gian cho MỌI dòng => "synced"
+// time = giây (có phần thập phân). Bài có ít nhất 1 dòng được gắn mốc => "synced"; các dòng
+// chưa gắn mốc được ước lượng (xem fillMissingTimes) để lời vẫn chạy theo nhạc.
 // (chạy theo nhạc, phát sáng dòng hiện tại). Thiếu mốc => hiển thị lời tĩnh.
 //
 // Lưu ý: dữ liệu nằm trong trình duyệt nên chỉ hiện trên máy đã nhập lời. Muốn mọi
@@ -18,6 +19,7 @@ import { readJson, writeJson } from "./storage";
 // ============================================================================
 
 const KEY = "mw_song_lyrics";
+export const LYRICS_CHANGED_EVENT = "mw:lyrics-changed";
 
 const readAll = () => readJson(KEY, {});
 
@@ -29,12 +31,37 @@ const cleanLines = (lines) =>
         }))
         .filter((l) => l.text !== "");
 
-export const isSynced = (lines) => lines.length > 0 && lines.every((l) => l.time != null);
+export const isSynced = (lines) => lines.some((l) => l.time != null);
+
+// Dòng chưa có mốc thời gian được ước lượng từ các dòng đã gắn mốc ở quanh nó:
+//   - nằm giữa 2 dòng có mốc  -> chia đều khoảng thời gian giữa chúng
+//   - nằm trước dòng có mốc đầu -> chia đều từ giây 0 tới mốc đầu
+//   - nằm sau dòng có mốc cuối  -> cách nhau ~3 giây mỗi dòng
+// Nhờ vậy artist chỉ gắn thiếu vài dòng thì lời vẫn sáng + tự chuyển dòng, thay vì bị
+// coi là lời tĩnh. Muốn chính xác thì vẫn nên gắn mốc đủ mọi dòng.
+export const fillMissingTimes = (lines) => {
+    const stamped = lines.map((l, i) => (l.time != null ? i : -1)).filter((i) => i >= 0);
+    if (!stamped.length) return lines;
+    const out = lines.map((l) => ({ ...l }));
+    const first = stamped[0];
+    const last = stamped[stamped.length - 1];
+    for (let i = 0; i < first; i += 1) out[i].time = (lines[first].time * i) / first;
+    for (let a = 0; a < stamped.length - 1; a += 1) {
+        const i0 = stamped[a];
+        const i1 = stamped[a + 1];
+        for (let i = i0 + 1; i < i1; i += 1) {
+            out[i].time = lines[i0].time + ((lines[i1].time - lines[i0].time) * (i - i0)) / (i1 - i0);
+        }
+    }
+    for (let i = last + 1; i < lines.length; i += 1) out[i].time = lines[last].time + (i - last) * 3;
+    return out;
+};
 
 export const getLyrics = (songId) => {
     const entry = readAll()[String(songId)];
     if (!entry) return null;
-    const lines = cleanLines(entry.lines);
+    const clean = cleanLines(entry.lines);
+    const lines = fillMissingTimes(clean);
     return lines.length ? { lines, synced: isSynced(lines), updatedAt: entry.updatedAt } : null;
 };
 
@@ -47,6 +74,8 @@ export const saveLyrics = (songId, lines) => {
         all[String(songId)] = { lines: cleaned, updatedAt: new Date().toISOString() };
     }
     writeJson(KEY, all);
+    // Báo cho panel "Đang phát" / trang bài hát đang mở nạp lại lời mới ngay
+    window.dispatchEvent(new CustomEvent(LYRICS_CHANGED_EVENT, { detail: { songId: String(songId) } }));
     return cleaned;
 };
 

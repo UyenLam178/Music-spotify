@@ -335,7 +335,7 @@
 /* ---------------- Genre grid (Search landing) ---------------- */
 .genre-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(180px, 100%), 1fr));
   gap: 16px;
 }
 .genre-tile {
@@ -755,7 +755,7 @@
 }
 .profile-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr));
   gap: 20px;
 }
 .profile-section {
@@ -1155,6 +1155,8 @@ a.genre-tile:hover { transform: scale(1.03); filter: brightness(1.1); }
 }
 
 .lyrics-box {
+  position: relative; /* để vị trí các dòng tính theo chính khung lời */
+  overscroll-behavior: contain; /* cuộn hết lời không kéo theo cả trang */
   max-height: 58vh;
   overflow-y: auto;
   padding: 8px 4px;
@@ -1183,20 +1185,25 @@ a.genre-tile:hover { transform: scale(1.03); filter: brightness(1.1); }
   color: var(--color-text);
 }
 .lyrics-box.synced .lyrics-line {
-  opacity: 0.5;
+  color: #fff;
+  opacity: 0.62; /* dòng chưa hát: sáng vừa đủ đọc */
 }
 .lyrics-line.clickable {
   cursor: pointer;
 }
-.lyrics-line.clickable:hover {
-  opacity: 0.85;
+@media (hover: hover) {
+  .lyrics-line.clickable:hover {
+    opacity: 0.85;
+  }
 }
 .lyrics-line.past {
-  opacity: 0.4;
+  opacity: 0.45; /* dòng đã hát: dịu hơn dòng sắp tới */
 }
+.lyrics-box.synced .lyrics-line.active,
 .lyrics-line.active {
   color: #fff;
   opacity: 1;
+  font-weight: 800;
   transform: scale(1.06);
   text-shadow: 0 0 12px rgba(29, 185, 84, 0.9), 0 0 28px rgba(29, 185, 84, 0.55);
 }
@@ -1272,4 +1279,801 @@ a.genre-tile:hover { transform: scale(1.03); filter: brightness(1.1); }
   justify-content: flex-end;
   flex-wrap: wrap;
   margin-top: 14px;
+}
+
+
+/* ======================================================================
+   Footer chú thích (đồ án học tập)
+   ====================================================================== */
+.app-content {
+  display: flex;
+  flex-direction: column;
+}
+.content-inner {
+  flex: 1 0 auto;
+  width: 100%;
+}
+.app-footer {
+  flex: none;
+  padding: 16px 24px 20px;
+  text-align: center;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--color-text-subdued);
+  border-top: 1px solid var(--color-border);
+}
+/* Trang đăng nhập / đăng ký: footer nằm sát đáy màn hình */
+.auth-footer {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-top: none;
+  padding: 10px 16px;
+  pointer-events: none;
+}
+
+/* ======================================================================
+   Video loop của bài hát
+   ====================================================================== */
+.song-video {
+  width: 100%;
+  max-width: 420px;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: #000;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+}
+.song-video video {
+  display: block;
+  width: 100%;
+  max-height: 60vh;
+  object-fit: contain;
+}
+.video-editor-preview {
+  display: block;
+  width: 100%;
+  max-height: 300px;
+  border-radius: var(--radius-md);
+  background: #000;
+}
+.video-editor-empty {
+  padding: 36px 16px;
+  text-align: center;
+  font-size: 14px;
+  color: var(--color-text-subdued);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-md);
+}
+.video-editor-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+
+/* ======================================================================
+   Giao diện điện thoại / máy tính bảng nhỏ
+   Sidebar thành ngăn kéo (nút ☰ ở header), player gọn 2 hàng.
+   ====================================================================== */
+.header-menu-btn,
+.sidebar-backdrop {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .app-shell {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    height: 100dvh;
+    gap: 6px;
+    padding: 6px 6px 0;
+  }
+  .app-main-col {
+    flex: 1;
+    min-height: 0;
+    gap: 6px;
+  }
+  .app-player-row {
+    flex: none;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  /* Sidebar -> ngăn kéo */
+  .sidebar {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 1100;
+    width: min(82vw, 300px);
+    border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
+    transform: translateX(-105%);
+    transition: transform 0.25s ease;
+  }
+  .sidebar.open {
+    transform: none;
+    box-shadow: 8px 0 32px rgba(0, 0, 0, 0.6);
+  }
+  .sidebar-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 1090;
+    background: rgba(0, 0, 0, 0.6);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+  }
+  .sidebar-backdrop.open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  /* Header */
+  .app-header {
+    padding: 0 8px;
+    gap: 8px;
+  }
+  .header-left {
+    gap: 6px;
+    min-width: 0;
+  }
+  .header-menu-btn {
+    display: inline-flex;
+    flex: none;
+    font-size: 20px;
+    color: var(--color-text);
+  }
+  .nav-arrows {
+    display: none;
+  }
+  .search-bar {
+    width: auto;
+    max-width: none;
+    flex: 1;
+    min-width: 0;
+    padding: 8px 12px;
+  }
+  .header-right {
+    flex: none;
+  }
+  .user-name {
+    display: none;
+  }
+  .user-pill {
+    padding: 4px;
+  }
+  .auth-buttons {
+    gap: 4px;
+  }
+  .auth-buttons .btn {
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+  .user-dropdown {
+    min-width: 180px;
+  }
+
+  /* Nội dung */
+  .content-inner {
+    padding: 16px 14px 24px;
+  }
+  .app-footer {
+    padding: 14px 14px 16px;
+  }
+  .section {
+    margin-bottom: 28px;
+  }
+  .section-head h2 {
+    font-size: 19px;
+  }
+  .card-grid,
+  .circle-grid {
+    grid-template-columns: repeat(auto-fill, minmax(135px, 1fr));
+    gap: 12px;
+  }
+  .media-card {
+    padding: 10px;
+  }
+
+  /* Header lớn của playlist / nghệ sĩ / bài hát */
+  .playlist-header {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 14px;
+    margin: -16px -14px 0;
+    padding: 20px 14px 18px;
+  }
+  .playlist-header-cover {
+    width: 170px;
+    height: 170px;
+  }
+  .playlist-header-title {
+    font-size: 30px;
+  }
+  .playlist-header-actions {
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .artist-banner {
+    height: 220px;
+    margin: -16px -14px 0;
+  }
+  .artist-banner-overlay {
+    left: 14px;
+    right: 14px;
+    bottom: 14px;
+  }
+  .artist-banner-name {
+    font-size: 32px;
+    overflow-wrap: anywhere;
+  }
+  .song-hero {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 16px;
+  }
+  .song-hero-info {
+    align-items: center;
+  }
+  .song-hero-cover {
+    width: min(70vw, 240px);
+    height: min(70vw, 240px);
+  }
+  .song-hero-title {
+    font-size: 28px;
+  }
+  .song-hero-meta,
+  .song-hero-actions {
+    justify-content: center;
+  }
+  .song-video {
+    max-width: 100%;
+  }
+  .lyrics-box {
+    max-height: 50vh;
+  }
+  .lyrics-box.synced {
+    padding: 8px 14px;
+  }
+
+  /* Danh sách bài hát: bỏ cột album, giữ số thứ tự / bài / thao tác */
+  .song-list-head,
+  .song-row,
+  .song-row.with-plays {
+    grid-template-columns: 28px minmax(0, 1fr) auto;
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+  .song-list-head > :nth-child(3),
+  .song-row-album,
+  .song-row-plays {
+    display: none;
+  }
+  .song-row-info {
+    min-width: 0;
+  }
+  .song-row-title,
+  .song-row-artist {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* Trình phát: 2 hàng (bài đang phát + điều khiển / thanh tiến trình) */
+  .player-bar {
+    height: auto;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "now ctrl"
+      "prog prog";
+    gap: 4px 10px;
+    padding: 8px 12px 10px;
+  }
+  .player-bar-empty {
+    grid-template-columns: none;
+    min-height: 56px;
+  }
+  .player-now-playing {
+    grid-area: now;
+  }
+  .player-center {
+    display: contents;
+  }
+  .player-controls {
+    grid-area: ctrl;
+    gap: 4px;
+  }
+  .player-controls > :first-child,
+  .player-controls > :last-child {
+    display: none; /* ẩn shuffle / repeat cho gọn */
+  }
+  .player-progress {
+    grid-area: prog;
+    max-width: none;
+  }
+  .player-volume {
+    display: none;
+  }
+  .player-cover {
+    width: 44px;
+    height: 44px;
+  }
+
+  /* Trang quản lý / hồ sơ */
+  .admin-page .data-table {
+    min-width: 600px;
+  }
+  .studio-head {
+    gap: 10px;
+  }
+  .studio-head h1 {
+    font-size: 28px !important;
+  }
+  .profile-section {
+    padding: 16px;
+  }
+  .wz-footer {
+    flex-wrap: wrap;
+  }
+  .wz-body {
+    min-height: 0;
+  }
+
+  /* Đăng nhập / đăng ký */
+  .auth-page {
+    padding: 16px 16px 56px;
+    align-items: flex-start;
+  }
+  .auth-card {
+    padding: 28px 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .btn {
+    padding: 11px 22px;
+  }
+  .section-head h2 {
+    font-size: 18px;
+  }
+  .playlist-header-title {
+    font-size: 26px;
+  }
+  .player-controls .btn-icon {
+    width: 36px;
+    height: 36px;
+  }
+}
+
+
+/* ======================================================================
+   Panel "Đang phát" (bên phải, giống Spotify)
+   ====================================================================== */
+.app-shell.has-panel {
+  grid-template-columns: var(--sidebar-width) 1fr var(--panel-width, 340px);
+}
+/* Thanh kéo ở mép trái panel: kéo ra / vào để đổi độ rộng, bấm đúp để về mặc định */
+.np-resizer {
+  grid-column: 3;
+  grid-row: 1;
+  justify-self: start;
+  position: relative;
+  z-index: 6;
+  width: 12px;
+  margin-left: -10px;
+  cursor: col-resize;
+  touch-action: none;
+}
+.np-resizer::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 5px;
+  width: 2px;
+  border-radius: 1px;
+  background: transparent;
+  transition: background 0.15s ease;
+}
+.np-resizer:hover::after,
+.np-resizer:focus-visible::after,
+body.np-resizing .np-resizer::after {
+  background: var(--color-green);
+}
+body.np-resizing {
+  cursor: col-resize;
+  user-select: none;
+}
+.np-panel {
+  grid-column: 3;
+  grid-row: 1;
+  position: relative;
+  min-width: 0;
+  overflow-y: auto;
+  padding: 16px;
+  background: var(--color-bg-base);
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.np-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 15px;
+}
+.np-media {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  flex: none;
+  border-radius: var(--radius-md);
+  background: #000;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.5);
+}
+.np-cover,
+.np-media .song-video,
+.np-media .song-video video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  object-fit: cover;
+  border-radius: var(--radius-md);
+  box-shadow: none;
+}
+.np-more {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 2;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(4px);
+}
+.np-more:hover,
+.np-more[aria-expanded="true"] {
+  background: rgba(0, 0, 0, 0.8);
+}
+.np-menu {
+  position: absolute;
+  top: 48px;
+  right: 8px;
+  z-index: 5;
+  min-width: 250px;
+  max-width: calc(100% - 16px);
+  padding: 6px;
+  background: #282828;
+  border-radius: var(--radius-sm);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6);
+}
+.np-menu button {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 11px 12px;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: left;
+}
+.np-menu button svg {
+  font-size: 20px;
+  flex: none;
+  color: var(--color-text-subdued);
+}
+.np-menu button:hover {
+  background: var(--color-bg-highlight-hover);
+}
+.np-menu-divider {
+  height: 1px;
+  margin: 6px 0;
+  background: #3a3a3a;
+}
+.np-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.np-info-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.np-title {
+  font-size: 22px;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+.np-title:hover,
+.np-artist:hover {
+  text-decoration: underline;
+}
+.np-artist {
+  font-size: 14px;
+  color: var(--color-text-subdued);
+}
+.np-lyrics {
+  padding: 16px;
+  border-radius: var(--radius-md);
+  background: linear-gradient(180deg, #4a3a14, #2a2208);
+}
+.np-lyrics h3 {
+  font-size: 15px;
+  margin-bottom: 10px;
+}
+.np-lyrics .lyrics-box {
+  scrollbar-width: none; /* ẩn thanh cuộn, vẫn cuộn được bằng chuột / ngón tay */
+  -ms-overflow-style: none;
+  overflow-x: hidden;
+  overflow-wrap: anywhere;
+  max-height: 280px;
+  padding: 0;
+  background: none;
+}
+.np-lyrics .lyrics-box.synced {
+  padding: 0;
+  background: none;
+}
+.np-lyrics .lyrics-pad {
+  height: 90px;
+}
+.np-lyrics .lyrics-line {
+  font-size: 18px;
+}
+.np-lyrics .lyrics-box.synced .lyrics-line.active {
+  transform: scale(1.03); /* panel có overflow-x: hidden nên không phóng to nhiều */
+  text-shadow: 0 0 14px rgba(255, 220, 130, 0.75), 0 0 30px rgba(255, 200, 80, 0.4);
+}
+.np-toast {
+  position: sticky;
+  bottom: 8px;
+  align-self: center;
+  padding: 10px 16px;
+  border-radius: 500px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #000;
+  background: #fff;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+}
+.np-credits {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 10px 18px;
+  font-size: 14px;
+}
+.np-credits dt {
+  color: var(--color-text-subdued);
+}
+.np-credits dd {
+  overflow-wrap: anywhere;
+}
+
+/* Điện thoại: panel phủ toàn màn hình; nút bật/tắt panel vẫn hiện ở thanh phát nhạc */
+@media (max-width: 900px) {
+  .np-resizer {
+    display: none;
+  }
+  .np-panel {
+    position: fixed;
+    inset: 0;
+    z-index: 1200;
+    border-radius: 0;
+    padding: calc(12px + env(safe-area-inset-top)) 16px calc(16px + env(safe-area-inset-bottom));
+  }
+  /* Panel toàn màn hình: ảnh/video vừa phải, lời chiếm phần còn lại để đọc thoải mái */
+  .np-panel {
+    gap: 12px;
+    padding-left: max(16px, env(safe-area-inset-left));
+    padding-right: max(16px, env(safe-area-inset-right));
+  }
+  .np-media {
+    width: min(100%, 420px, 38dvh);
+    max-width: none;
+    align-self: center;
+  }
+  .np-more {
+    width: 40px;
+    height: 40px;
+  }
+  .np-menu {
+    top: 54px;
+    min-width: 0;
+    width: min(280px, calc(100% - 16px));
+  }
+  .np-menu button {
+    padding: 13px 12px; /* vùng bấm đủ lớn cho ngón tay */
+  }
+  .np-title {
+    font-size: 20px;
+  }
+  .np-lyrics {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    min-height: 220px;
+  }
+  .np-lyrics .lyrics-box {
+    flex: 1 1 0;
+    min-height: 0;
+    max-height: none;
+  }
+  .np-lyrics .lyrics-line {
+    font-size: 20px;
+    padding: 7px 0;
+  }
+  .np-lyrics .lyrics-pad {
+    height: 22dvh;
+  }
+  .app-shell {
+    padding-left: max(6px, env(safe-area-inset-left));
+    padding-right: max(6px, env(safe-area-inset-right));
+  }
+  .player-bar {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-areas:
+      "now ctrl tgl"
+      "prog prog prog";
+  }
+  .player-volume {
+    display: flex;
+    grid-area: tgl;
+  }
+  .player-volume .player-extra {
+    display: none;
+  }
+}
+
+
+@media (max-width: 900px) and (max-height: 520px) {
+  .np-media {
+    width: min(100%, 200px);
+  }
+  .np-lyrics {
+    min-height: 240px;
+  }
+  .np-lyrics .lyrics-pad {
+    height: 80px;
+  }
+}
+@media (max-width: 480px) {
+  .lyrics-line {
+    font-size: 20px;
+  }
+}
+
+/* ---------------- Cắt video (VideoTrimmer) ---------------- */
+.trimmer-video {
+  display: block;
+  width: 100%;
+  max-height: 260px;
+  border-radius: var(--radius-md);
+  background: #000;
+}
+.trimmer-track {
+  position: relative;
+  height: 48px;
+  margin: 14px 12px 8px;
+  border-radius: 6px;
+  background: #2a2a2a;
+  touch-action: none;
+  user-select: none;
+}
+.trimmer-dim {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.55);
+  pointer-events: none;
+  z-index: 1;
+}
+.trimmer-window {
+  position: absolute;
+  top: -3px;
+  bottom: -3px;
+  z-index: 2;
+  border-top: 3px solid var(--color-green);
+  border-bottom: 3px solid var(--color-green);
+  background: rgba(29, 185, 84, 0.18);
+  cursor: grab;
+  touch-action: none;
+}
+.trimmer-window:active {
+  cursor: grabbing;
+}
+.trimmer-handle {
+  position: absolute;
+  top: -3px;
+  bottom: -3px;
+  width: 16px;
+  background: var(--color-green);
+  cursor: ew-resize;
+  touch-action: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.trimmer-handle::after {
+  content: "";
+  width: 2px;
+  height: 18px;
+  border-radius: 1px;
+  background: #000;
+}
+.trimmer-handle.left {
+  left: -16px;
+  border-radius: 6px 0 0 6px;
+}
+.trimmer-handle.right {
+  right: -16px;
+  border-radius: 0 6px 6px 0;
+}
+.trimmer-handle:focus-visible {
+  outline: 2px solid #fff;
+}
+.trimmer-playhead {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 3;
+  width: 2px;
+  background: #fff;
+  pointer-events: none;
+}
+.trimmer-times {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  font-size: 13px;
+  color: var(--color-text-subdued);
+}
+.trimmer-times b {
+  color: var(--color-text);
+}
+.trimmer-progress {
+  position: relative;
+  height: 28px;
+  margin-top: 14px;
+  border-radius: 500px;
+  overflow: hidden;
+  background: var(--color-bg-highlight);
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.trimmer-progress-bar {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: rgba(29, 185, 84, 0.45);
+  transition: width 0.15s linear;
+}
+.trimmer-progress span {
+  position: relative;
+}
+
+.np-lyrics .lyrics-box::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
 }

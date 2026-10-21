@@ -17,6 +17,8 @@ export function PlayerProvider({ children }) {
   const [volume, setVolume] = useState(0.8);
   const [isShuffle, setIsShuffle] = useState(false);
   const [repeatMode, setRepeatMode] = useState("off"); // off | all | one
+  // Panel "Đang phát" bên phải (video + lời + menu ⋯)
+  const [panelOpen, setPanelOpen] = useState(false);
 
   const currentSong = currentIndex >= 0 ? queue[currentIndex] : null;
 
@@ -122,6 +124,8 @@ export function PlayerProvider({ children }) {
   }, [currentSong?.id]);
 
   const playQueue = (songs, startIndex = 0) => {
+    // Lần đầu bấm phát bài: tự bật panel trên màn hình rộng (điện thoại thì mở bằng nút)
+    if (currentIndex < 0 && window.innerWidth > 900) setPanelOpen(true);
     setQueue(songs);
     setCurrentIndex(startIndex);
     setIsPlaying(true);
@@ -135,6 +139,16 @@ export function PlayerProvider({ children }) {
     } else {
       playQueue([song], 0);
     }
+  };
+
+  // Thêm cuối hàng đợi; chưa có bài nào đang phát thì phát luôn bài này.
+  const addToQueue = (song) => {
+    if (!song) return;
+    if (currentIndex < 0) {
+      playQueue([song], 0);
+      return;
+    }
+    setQueue((q) => [...q, song]);
   };
 
   const togglePlay = () => {
@@ -169,6 +183,9 @@ export function PlayerProvider({ children }) {
       setIsShuffle,
       setRepeatMode: () =>
         setRepeatMode((m) => (m === "off" ? "all" : m === "all" ? "one" : "off")),
+      panelOpen,
+      setPanelOpen,
+      addToQueue,
       playSong,
       playQueue,
       togglePlay,
@@ -176,7 +193,7 @@ export function PlayerProvider({ children }) {
       prev: handlePrev,
       seek,
     }),
-    [queue, currentSong, currentIndex, isPlaying, progress, duration, volume, isShuffle, repeatMode]
+    [queue, currentSong, currentIndex, isPlaying, progress, duration, volume, isShuffle, repeatMode, panelOpen]
   );
 
   return <PlayerContext.Provider value={value}>{children}</PlayerContext.Provider>;

@@ -4,6 +4,7 @@ import { PlayerProvider } from "./context/PlayerContext";
 import { LikeProvider } from "./context/LikeContext";
 import MainLayout from "./components/Layout/MainLayout";
 import ProtectedRoute from "./components/Common/ProtectedRoute";
+import AuthLayout from "./components/Layout/AuthLayout";
 
 import Home from "./pages/Home/Home";
 import Search from "./pages/Search/Search";
@@ -36,11 +37,13 @@ function App() {
           <PlayerProvider>
             <Routes>
               {/* Trang xác thực - không dùng MainLayout (không có sidebar/player) */}
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-              <Route path="/verify-otp" element={<VerifyOtp />} />
-              <Route path="/forgot-password" element={<ForgotPassword />} />
-              <Route path="/reset-password" element={<ResetPassword />} />
+              <Route element={<AuthLayout />}>
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+                <Route path="/verify-otp" element={<VerifyOtp />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
+              </Route>
 
               {/* Các trang chính - dùng chung MainLayout kiểu Spotify */}
               <Route element={<MainLayout />}>

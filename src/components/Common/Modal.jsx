@@ -22,19 +22,19 @@ export default function Modal({ isOpen, onClose, title, children, width = 420 })
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        zIndex: 1000,
+        zIndex: 1300,
       }}
     >
       <div
         onClick={(e) => e.stopPropagation()}
         style={{
           width,
-          maxWidth: "90vw",
-          maxHeight: "85vh",
+          maxWidth: "94vw",
+          maxHeight: "90vh",
           overflowY: "auto",
           background: "var(--color-bg-elevated)",
           borderRadius: "var(--radius-lg)",
-          padding: 28,
+          padding: "clamp(16px, 4vw, 28px)",
           position: "relative",
         }}
       >
