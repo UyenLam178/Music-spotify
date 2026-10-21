@@ -117,7 +117,7 @@ export function PlayerProvider({ children }) {
     setProgress(0);
     if (isPlaying) {
       audio.play().catch(() => {});
-      // UC24: ghi nhận 1 lượt nghe khi BẮT ĐẦU phát (server tự chống spam 30 giây)
+      // UC24: ghi nhận 1 lượt nghe khi BẮT ĐẦU phát (không đếm trùng trong 30 giây)
       if (tokenStorage.getToken()) recordPlay(currentSong.id);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

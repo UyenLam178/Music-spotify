@@ -19,7 +19,7 @@ export default function LoginForm() {
     const errs = {};
     const emailKey = validateEmail(form.email);
     if (emailKey) errs.email = t(emailKey);
-    // Đăng nhập chỉ cần kiểm tra "có nhập" - độ mạnh mật khẩu do backend quyết định
+    // Đăng nhập chỉ cần kiểm tra "có nhập" - độ mạnh mật khẩu do lúc đăng ký / đổi mật khẩu quyết định
     if (!form.password) errs.password = t("validation.passwordRequired");
     setErrors(errs);
     return Object.keys(errs).length === 0;

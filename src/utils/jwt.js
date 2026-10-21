@@ -2,9 +2,8 @@
 //
 // LƯU Ý: JWT = header.payload.signature, trong đó payload chỉ được mã hoá Base64URL
 // (KHÔNG phải mã hoá bí mật). Ai có token cũng đọc được payload. Vì vậy:
-//   - Backend không nên nhét email, số điện thoại... vào payload; chỉ để sub, role, exp.
-//   - Frontend chỉ giải mã để đọc "exp" (hết hạn lúc nào). KHÔNG tin payload để phân quyền
-//     (chữ ký chỉ backend mới kiểm tra được).
+//   - Token không nên chứa email, số điện thoại... chỉ nên có định danh, vai trò và hạn dùng.
+//   - Giao diện chỉ giải mã để đọc "exp" (hết hạn lúc nào), KHÔNG dùng payload để phân quyền.
 
 const base64UrlDecode = (str) => {
     const b64 = str.replace(/-/g, "+").replace(/_/g, "/");
@@ -31,7 +30,7 @@ export const getTokenExpiryMs = (token) => {
     return typeof exp === "number" ? exp * 1000 : null;
 };
 
-// skewMs: trừ hao lệch đồng hồ client/server (mặc định 5 giây)
+// skewMs: trừ hao lệch đồng hồ giữa máy người dùng và hệ thống (mặc định 5 giây)
 export const isTokenExpired = (token, skewMs = 5000) => {
     const payload = decodeJwt(token);
     if (!payload) return true; // token hỏng coi như không dùng được

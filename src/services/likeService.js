@@ -1,7 +1,6 @@
 import { readJson, writeJson } from "./storage";
 
-// Backend CHƯA có API "thích bài hát" => lưu danh sách bài đã thích theo từng tài khoản
-// trong localStorage. Khi backend bổ sung endpoint, chỉ cần sửa 2 hàm dưới đây.
+// Danh sách bài đã thích được lưu theo từng tài khoản ngay trên trình duyệt.
 const key = (userId) => `mw_likes_${userId}`;
 
 export const getLikedSongs = (userId) => readJson(key(userId), []);

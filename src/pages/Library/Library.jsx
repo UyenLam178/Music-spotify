@@ -35,7 +35,7 @@ export default function Library() {
             });
             navigate(`/playlist/${playlist.id}`);
         } catch {
-            // im lặng bỏ qua nếu backend chưa có API
+            // im lặng bỏ qua nếu không tạo được
         } finally {
             setCreating(false);
         }

@@ -48,7 +48,7 @@ export default function ArtistSection() {
         setStatus({ type: "success", message: t("artistSection.updated") });
       } else {
         await userService.requestBecomeArtist(payload);
-        // Lấy lại hồ sơ để có artistRequestStatus = PENDING từ backend
+        // Lấy lại hồ sơ để cập nhật trạng thái yêu cầu (đang chờ duyệt)
         await refreshUser();
         setStatus({ type: "success", message: t("artistSection.requestSent") });
       }

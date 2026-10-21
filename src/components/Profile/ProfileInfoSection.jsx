@@ -27,7 +27,7 @@ export default function ProfileInfoSection() {
     setSaving(true);
     try {
       const updated = await userService.updateProfile({ fullName: fullName.trim() });
-      // Backend trả về User mới; nếu chỉ trả 200 rỗng thì tự cập nhật từ dữ liệu vừa gửi
+      // Nếu không nhận được hồ sơ mới thì tự cập nhật từ dữ liệu vừa gửi
       setUser((prev) => ({ ...prev, ...(updated || {}), fullName: updated?.fullName ?? fullName.trim() }));
       setStatus({ type: "success", message: t("profile.updatedProfile") });
     } catch (err) {

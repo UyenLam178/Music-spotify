@@ -3,17 +3,12 @@ import { readJson, writeJson } from "./storage";
 // ============================================================================
 // songMetaService.js
 //
-// Backend (entity Song) CHƯA có cột thể loại / album. Hai thông tin này được lưu
-// phía frontend (localStorage) theo id bài hát:
+// Thể loại và album của bài hát được lưu trên trình duyệt theo id bài hát:
 //     { [songId]: { genreId, albumTitle, artistId } }
 //
-// QUY TẮC: mỗi bài hát CHỈ CÓ ĐÚNG 1 thể loại => genreId luôn là 1 giá trị đơn
 // (không bao giờ là mảng). Mọi dữ liệu cũ lỡ lưu dạng mảng sẽ bị ép về phần tử đầu.
 //
 // Lưu ý: dữ liệu nằm trong trình duyệt nên chỉ đúng trên máy nghệ sĩ đã đăng bài.
-// Muốn thể loại hiện trên mọi máy, backend phải có cột genre (xem phần ghi chú
-// giao cho backend). Khi đó songService sẽ đọc song.genreId từ API, file này
-// chỉ còn dùng làm dự phòng.
 // ============================================================================
 
 const KEY = "mw_song_meta";

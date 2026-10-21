@@ -1,9 +1,6 @@
 import api from "./api";
 
-// API dành cho ARTIST (backend: ArtistSongController, prefix /api/artist).
-// SongManageResponse: { id, title, audioUrl, coverUrl, durationSeconds, playCount,
-//   status, released, releaseAt, rejectReason, artistId, artistName,
-//   featuredArtists: [{ id, artistName }], createdAt, updatedAt }
+// Các thao tác của nghệ sĩ với bài hát của mình.
 
 // UC28 - Bài hát của tôi
 export const getMySongs = async () => (await api.get("/artist/songs")).data;
@@ -15,7 +12,7 @@ export const uploadSong = async ({ title, audio, cover, featuredArtistIds = [], 
     form.append("title", title);
     form.append("audio", audio);
     if (cover) form.append("cover", cover);
-    // Spring bind List<Long>: gửi nhiều dòng cùng tên
+    // Nhiều nghệ sĩ feat: gửi nhiều dòng cùng tên
     featuredArtistIds.forEach((id) => form.append("featuredArtistIds", id));
     if (releaseAt) form.append("releaseAt", releaseAt);
     return (

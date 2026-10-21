@@ -1,6 +1,6 @@
 import api from "./api";
 
-// Backend có thể trả mảng thuần (List<User>) hoặc Page { content: [...] }
+// Danh sách có thể là mảng thuần hoặc có dạng phân trang { content: [...] }
 const toList = (data) => (Array.isArray(data) ? data : data?.content || []);
 
 export const getAllUsers = async () => toList((await api.get("/admin/users")).data);
@@ -23,13 +23,11 @@ export const assignRole = async (userId, role) =>
     (await api.put(`/admin/users/${userId}/role`, { role })).data;
 
 // ---------------------------------------------------------------------------
-// Kiểm duyệt bài hát (backend: AdminSongController, prefix /api/admin/songs, chỉ ADMIN)
-// SongManageResponse: { id, title, audioUrl, coverUrl, durationSeconds, playCount, status,
-//   released, releaseAt, rejectReason, artistId, artistName, featuredArtists, createdAt, updatedAt }
+// Kiểm duyệt bài hát (chỉ ADMIN)
 // ---------------------------------------------------------------------------
 
 // UC34 — status: PENDING | APPROVED | REJECTED | HIDDEN | DELETED (viết HOA); bỏ trống = mọi bài trừ DELETED
-// Trả PageResponse { content, page, size, totalElements, totalPages }
+// Kết quả phân trang { content, page, size, totalElements, totalPages }
 export const getSongs = async ({ status, page = 0, size = 20 } = {}) =>
     (await api.get("/admin/songs", { params: { ...(status ? { status } : {}), page, size } })).data;
 

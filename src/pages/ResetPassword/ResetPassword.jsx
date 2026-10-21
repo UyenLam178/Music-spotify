@@ -13,7 +13,7 @@ import Button from "../../components/Common/Button";
 import PasswordRules from "../../components/Common/PasswordRules";
 
 // UC04 -> UC02 + UC05: sau "Quên mật khẩu", người dùng nhập OTP nhận qua email
-// cùng mật khẩu mới. Backend kiểm tra và tiêu thụ OTP ngay trong resetPassword().
+// cùng mật khẩu mới. Mã OTP chỉ dùng được một lần.
 export default function ResetPassword() {
   const { t } = useTranslation();
   const navigate = useNavigate();

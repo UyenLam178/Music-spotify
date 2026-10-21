@@ -21,13 +21,13 @@ const AuthContext = createContext(null);
 //     artistRequestStatus, artistName, bio }
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
-  // Không có token thì không cần chờ backend => không hiện màn hình loading
+  // Không có token thì không cần chờ => không hiện màn hình loading
   const [isLoading, setIsLoading] = useState(() => {
     dropSessionIfIdle();
     return !!tokenStorage.getToken();
   });
 
-  // Có token trong localStorage -> hỏi backend "tôi là ai" để khôi phục phiên.
+  // Có token trong localStorage -> lấy lại hồ sơ để khôi phục phiên.
   const loadCurrentUser = useCallback(async () => {
     if (!tokenStorage.getToken()) {
       setUser(null);
@@ -37,7 +37,7 @@ export function AuthProvider({ children }) {
       setUser(await userService.getProfile());
     } catch (err) {
       const status = err?.response?.status;
-      // Token sai/hết hạn (Spring Security có thể trả 401 hoặc 403) -> bỏ phiên.
+      // Token sai/hết hạn -> bỏ phiên.
       // Lỗi khác (mất mạng, 5xx) -> giữ token để người dùng thử lại sau.
       if (status === 401 || status === 403) tokenStorage.clear();
       setUser(null);
@@ -88,11 +88,11 @@ export function AuthProvider({ children }) {
 
   // UC03: login -> lưu JWT -> tải hồ sơ đầy đủ
   const login = async (credentials) => {
-    const res = await authService.login(credentials); // LoginResponse { token, userId, username, role }
+    const res = await authService.login(credentials); // { token, userId, username, role }
     try {
       setUser(await userService.getProfile());
     } catch {
-      // Không lấy được hồ sơ thì vẫn dùng thông tin tối thiểu từ LoginResponse
+      // Không lấy được hồ sơ thì vẫn dùng thông tin tối thiểu từ kết quả đăng nhập
       setUser({ id: res.userId, username: res.username, role: res.role });
     }
     return res;
@@ -101,14 +101,14 @@ export function AuthProvider({ children }) {
   // UC01: đăng ký xong CHƯA đăng nhập, phải xác thực OTP (UC02) rồi mới login.
   const register = (payload) => authService.register(payload);
 
-  // Xoá phiên ở phía client (không gọi backend).
+  // Xoá phiên trên máy này.
   // Dùng sau khi vô hiệu hoá / xoá tài khoản, khi token không còn dùng được nữa.
   const endSession = useCallback(() => {
     tokenStorage.clear();
     setUser(null);
   }, []);
 
-  // UC06: báo backend đăng xuất; dù lỗi mạng vẫn phải xoá token ở client.
+  // UC06: đăng xuất; dù lỗi mạng vẫn phải xoá phiên trên máy này.
   const logout = async () => {
     try {
       await userService.logout();

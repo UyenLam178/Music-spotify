@@ -7,7 +7,7 @@ export const getProfile = async () => (await api.get("/users/me/profile")).data;
 export const updateProfile = async ({ fullName }) =>
     (await api.put("/users/me/profile", { fullName })).data;
 
-// Backend: POST /me/avatar (multipart, part tên "file")
+// Đổi ảnh đại diện (gửi file ảnh)
 export const updateAvatar = async (file) => {
     const form = new FormData();
     form.append("file", file);
@@ -29,11 +29,11 @@ export const requestUpdateEmailOtp = async ({ newEmail }) =>
 export const updateEmail = async ({ otp }) =>
     (await api.put("/users/me/email", { otpCode: otp })).data;
 
-// Backend (AccountActionRequest) nhận field "password", không phải "currentPassword"
+// Mật khẩu hiện tại được gửi với tên "password"
 export const disableAccount = async ({ currentPassword }) =>
     (await api.put("/users/me/disable", { password: currentPassword })).data;
 
-// Backend: PUT /me/delete (soft delete), không phải DELETE
+// Xoá tài khoản là xoá mềm (tài khoản bị đánh dấu đã xoá)
 export const deleteAccount = async ({ currentPassword }) =>
     (await api.put("/users/me/delete", { password: currentPassword })).data;
 

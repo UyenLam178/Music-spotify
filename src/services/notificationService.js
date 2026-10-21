@@ -4,16 +4,8 @@ import * as userService from "./userService";
 // ============================================================================
 // Hòm thư (mailbox) của người dùng.
 //
-// API backend mong đợi (CHƯA có trong backend hiện tại - cần bổ sung):
-//   GET    /api/notifications               -> [{ id, type, title, message, read, createdAt }]
-//   PUT    /api/notifications/{id}/read
-//   PUT    /api/notifications/read-all
-//   DELETE /api/notifications/{id}
-// type: ARTIST_REQUEST_APPROVED | ARTIST_REQUEST_REJECTED | ...
-//
-// Khi backend chưa có endpoint (404/lỗi), service tự suy ra thư từ hồ sơ
-// (artistRequestStatus) để user vẫn nhận được kết quả duyệt yêu cầu artist.
-// Trạng thái đã đọc ở chế độ này lưu ở localStorage.
+// Thư gồm kết quả duyệt yêu cầu trở thành nghệ sĩ (được duyệt / bị từ chối).
+// Thư được suy ra từ hồ sơ người dùng; trạng thái đã đọc lưu trên trình duyệt.
 // ============================================================================
 
 const readKey = (userId) => `mw_inbox_read_${userId}`;

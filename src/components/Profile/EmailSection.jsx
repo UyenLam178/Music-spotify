@@ -10,8 +10,8 @@ import StatusBanner from "../Common/StatusBanner";
 import { maskEmail } from "../../utils/mask";
 
 // UC13 Cập nhật email (include UC02 Xác thực OTP, purpose CHANGE_EMAIL)
-//   Bước 1: nhập email mới -> backend kiểm tra chưa được dùng, gửi OTP tới email mới
-//   Bước 2: nhập OTP       -> backend xác thực và cập nhật email
+//   Bước 1: nhập email mới -> kiểm tra email chưa được dùng, gửi mã OTP tới email mới
+//   Bước 2: nhập OTP       -> xác thực và cập nhật email
 export default function EmailSection() {
   const { t } = useTranslation();
   const { user, setUser } = useAuth();

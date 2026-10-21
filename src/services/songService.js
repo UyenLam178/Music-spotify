@@ -5,29 +5,19 @@ import { placeholderCover } from "../utils/cover";
 import { Role } from "../utils/enums";
 
 // ============================================================================
-// songService.js — API NGƯỜI NGHE (docs/song.md, UC20 – UC25 + lịch sử nghe)
+// songService.js — nghe nhạc, tìm kiếm, trang nghệ sĩ, nghe gần đây
 //
-// Chỉ dùng dữ liệu THẬT từ backend, KHÔNG còn mock / dữ liệu mẫu.
-//
-//   GET  /songs?page&size                  danh sách bài đã phát hành   (UC20)
-//   GET  /songs/search?keyword&page&size   tìm kiếm                     (UC21)
-//   GET  /songs/{id}                       chi tiết bài                 (UC22)
-//   POST /songs/{id}/play                  ghi nhận lượt nghe           (UC24)
-//   GET  /songs/artists/{id}?page&size     trang nghệ sĩ                (UC25)
-//   GET  /users/me/history                 nghe gần đây (tối đa 10)
-//
-// QUYỀN: mọi API trên đều yêu cầu ĐĂNG NHẬP (USER / ARTIST / ADMIN đều dùng được),
-// chưa đăng nhập -> 401. Backend chưa có API album / trending / popular artists /
-// thể loại, nên trang chủ được dựng từ danh sách bài đã phát hành.
+// Chỉ người đã đăng nhập (USER / ARTIST / ADMIN) mới xem và nghe được nhạc.
+// Chưa có album / trending / nghệ sĩ nổi bật riêng nên trang chủ được dựng từ
+// danh sách các bài đã phát hành.
 // ============================================================================
 
-const PAGE_SIZE = 50; // backend ép size về 1–50
+const PAGE_SIZE = 50; // tối đa 50 bài mỗi trang
 const MAX_PAGES = 6; // chặn vòng lặp tải quá nhiều trang
 
 // ----------------------------------------------------------------------------
-// Chuyển SongResponse của backend -> shape UI dùng
-// SongResponse: { id, title, audioUrl, coverUrl, durationSeconds, playCount, releaseAt,
-//                 artistId, artistName, featuredArtists: [{ id, artistName }] }
+// Chuẩn hoá thông tin bài hát về dạng giao diện dùng: tên nghệ sĩ gộp cả nghệ sĩ feat,
+// có ảnh bìa thay thế nếu bài chưa có ảnh.
 // ----------------------------------------------------------------------------
 export const toListenerSong = (s) => {
     if (!s) return null;
@@ -42,11 +32,13 @@ export const toListenerSong = (s) => {
         featuredArtists: feat,
         albumTitle: meta?.albumTitle || "",
         coverUrl: s.coverUrl ? resolveAssetUrl(s.coverUrl) : placeholderCover(s.title),
+        // Video lặp (Canvas) của bài, rỗng nếu artist chưa đăng -> panel hiện ảnh bìa
+        canvasUrl: s.canvasUrl ? resolveAssetUrl(s.canvasUrl) : "",
         duration: s.durationSeconds ?? 0,
         audioUrl: resolveAssetUrl(s.audioUrl),
         playCount: s.playCount ?? 0,
         releaseAt: s.releaseAt,
-        // Ưu tiên thể loại do backend trả (nếu sau này có), nếu không lấy từ metadata cục bộ.
+        // Thể loại lấy từ thông tin lưu theo bài.
         // Luôn là 1 giá trị đơn: 1 bài chỉ thuộc 1 thể loại.
         genreId: s.genreId != null ? String(s.genreId) : s.genre?.id != null ? String(s.genre.id) : meta?.genreId ?? null,
     };
@@ -62,7 +54,7 @@ const toArtist = (id, name, avatarUrl) => ({
     avatarUrl: avatarUrl ? resolveAssetUrl(avatarUrl) : placeholderCover(name),
 });
 
-// Tải lần lượt các trang của 1 API trả PageResponse, gộp content lại.
+// Tải lần lượt các trang rồi gộp lại.
 const fetchAllPages = async (path, params = {}, maxPages = MAX_PAGES) => {
     const all = [];
     for (let page = 0; page < maxPages; page += 1) {
@@ -73,7 +65,7 @@ const fetchAllPages = async (path, params = {}, maxPages = MAX_PAGES) => {
     return all;
 };
 
-// Khi lỗi 400 "... does not exist" của backend => coi như không có
+// Bài hát / nghệ sĩ không tồn tại => coi như không có
 const isNotFound = (err) => err?.response?.status === 400;
 
 // ----------------------------------------------------------------------------
@@ -107,7 +99,7 @@ export const getRecentHistory = async () => {
 // ----------------------------------------------------------------------------
 const avatarCache = new Map(); // artistId -> url (chỉ trong phiên hiện tại)
 
-// Trang nghệ sĩ: ArtistSongsResponse { artistId, artistName, bio, avatarUrl, songs: PageResponse }
+// Trang nghệ sĩ: thông tin nghệ sĩ và các bài của họ.
 // Gồm bài nghệ sĩ là Artist chính HOẶC được feat. Nghệ sĩ mới chưa có bài vẫn trả về bình thường.
 export const getArtistById = async (id) => {
     try {
@@ -170,7 +162,7 @@ const artistsFromSongs = (songs, nameFilter = null) => {
 };
 
 // ----------------------------------------------------------------------------
-// Trang chủ — dựng từ các bài đã phát hành (backend chưa có API trending / album)
+// Trang chủ — dựng từ các bài đã phát hành (chưa có trending / album riêng)
 // ----------------------------------------------------------------------------
 export const getHomeData = async () => {
     const songs = await getAllSongs(); // đã sắp xếp: mới phát hành lên đầu
@@ -190,12 +182,10 @@ export const getSongsByGenre = async (genreId) => {
 };
 
 // ----------------------------------------------------------------------------
-// Tìm kiếm — GET /songs/search tìm theo tên bài, nghệ danh chính và nghệ danh feat.
-// Backend chưa có API tìm nghệ sĩ cho người nghe, nên:
-//   * nghệ sĩ khớp tên được rút ra từ các bài tìm thấy;
-//   * ARTIST  : thêm GET /artist/search-artists (cả nghệ sĩ chưa có bài);
-//   * ADMIN   : thêm GET /admin/users (lọc ARTIST đang ACTIVE).
-// Lỗi của API bài hát được ném ra để trang Search hiển thị (401 = chưa đăng nhập, 429...).
+// Tìm kiếm theo tên bài, nghệ danh chính và nghệ danh feat.
+// Nghệ sĩ khớp tên được rút ra từ các bài tìm thấy; riêng nghệ sĩ và admin tìm thêm được
+// cả nghệ sĩ chưa có bài nào.
+// Lỗi tải bài hát được ném ra để trang Search hiển thị.
 // ----------------------------------------------------------------------------
 const searchExtraArtists = async (q, role) => {
     try {

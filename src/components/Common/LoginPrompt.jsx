@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import Button from "./Button";
 
-// Backend yêu cầu đăng nhập cho mọi API xem / tìm kiếm / nghe nhạc (docs/song.md mục 14).
+// Phải đăng nhập mới xem, tìm kiếm và nghe nhạc được.
 export default function LoginPrompt() {
     const { t } = useTranslation();
     const navigate = useNavigate();

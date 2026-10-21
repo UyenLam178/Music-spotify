@@ -6,8 +6,7 @@ import { clearActivity, touchActivity } from "./session";
 // ---------------------------------------------------------------------------
 // Axios instance dùng chung cho toàn bộ frontend.
 //
-// Mặc định gọi "/api/..." (Vite proxy sang Spring Boot, xem vite.config.js).
-// Khi deploy có thể đặt VITE_API_BASE_URL=https://domain-backend/api
+// Mặc định gọi "/api/...". Khi deploy có thể đặt VITE_API_BASE_URL=https://domain-api/api
 // ---------------------------------------------------------------------------
 export const BASE_URL = (import.meta.env.VITE_API_BASE_URL || "/api").replace(/\/+$/, "");
 
@@ -15,8 +14,7 @@ const TOKEN_KEY = "mw_access_token";
 // Khoá cũ của bản có refresh-token; dọn đi để không để rác trong localStorage.
 const LEGACY_REFRESH_KEY = "mw_refresh_token";
 
-// Class diagram: LoginResponse { token, userId, username } và JwtUtil chỉ có
-// 1 token (không có refresh token) => chỉ lưu 1 JWT.
+// Chỉ dùng 1 token đăng nhập (không có refresh token).
 export const tokenStorage = {
     getToken: () => localStorage.getItem(TOKEN_KEY),
     setToken: (token) => {
@@ -35,12 +33,12 @@ const api = axios.create({
     headers: { "Content-Type": "application/json" },
 });
 
-// Gắn JWT vào mỗi request => JwtAuthenticationFilter ở backend đọc header này.
+// Gắn token đăng nhập vào mỗi request.
 api.interceptors.request.use((config) => {
     const token = tokenStorage.getToken();
     if (token) {
         touchActivity(); // gọi API = đang dùng web
-        // Token đã hết hạn (đọc "exp" trong payload) -> khỏi gửi lên server, xoá phiên luôn.
+        // Token đã hết hạn (đọc "exp" trong payload) -> khỏi gửi đi, xoá phiên luôn.
         if (isTokenExpired(token)) {
             tokenStorage.clear();
             window.dispatchEvent(new CustomEvent("mw:auth-expired"));
@@ -52,7 +50,7 @@ api.interceptors.request.use((config) => {
 });
 
 // Token hết hạn / không hợp lệ (401) => xoá phiên và báo cho AuthContext.
-// Bỏ qua các endpoint /auth/** vì ở đó 401 chỉ nghĩa là "sai email/mật khẩu".
+// Bỏ qua các request đăng nhập / đăng ký vì ở đó 401 chỉ nghĩa là "sai email/mật khẩu".
 api.interceptors.response.use(
     (response) => response,
     (error) => {
@@ -66,7 +64,7 @@ api.interceptors.response.use(
     }
 );
 
-// Lấy thông báo lỗi dễ đọc từ response của Spring Boot.
+// Lấy thông báo lỗi dễ đọc từ phản hồi lỗi.
 // Hỗ trợ: "chuỗi", { message }, { error }, { errors: [...] } (validation),
 // hoặc map { field: "thông báo" }.
 export const extractErrorMessage = (error, fallback) => {
@@ -81,13 +79,13 @@ export const extractErrorMessage = (error, fallback) => {
     if (Array.isArray(data.errors) && data.errors.length) {
         return data.errors.map((e) => e.defaultMessage || e.message || e).join(", ");
     }
-    // Body mặc định của Spring ({timestamp,status,error,path}) không có nội dung hữu ích cho người dùng
+    // Phản hồi lỗi mặc định ({timestamp,status,error,path}) không có nội dung hữu ích cho người dùng
     if (typeof data.error === "string") return defaultMsg;
     const firstKey = Object.keys(data).find((k) => typeof data[k] === "string");
     return firstKey ? data[firstKey] : defaultMsg;
 };
 
-// Avatar backend có thể trả về đường dẫn tương đối ("/uploads/a.png").
+// Ảnh / video có thể có đường dẫn tương đối ("/uploads/a.png").
 // Hàm này biến nó thành URL dùng được trong <img>.
 export const resolveAssetUrl = (url) => {
     if (!url) return "";

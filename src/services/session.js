@@ -5,8 +5,8 @@
 // (bấm, gõ, cuộn, gọi API) mốc này được làm mới. Mở lại web mà đã quá 7 ngày kể
 // từ mốc đó -> xoá phiên, yêu cầu đăng nhập lại.
 //
-// LƯU Ý: đây là luật phía frontend. JWT + phiên Redis ở backend có hạn riêng
-// (app.jwt.expiration-ms); hết hạn đó thì server từ chối dù frontend còn nhớ.
+// LƯU Ý: đây chỉ là luật nhớ đăng nhập trên giao diện; phiên đăng nhập còn có hạn riêng,
+// hết hạn đó thì vẫn phải đăng nhập lại.
 // ============================================================================
 
 export const IDLE_LIMIT_MS = 7 * 24 * 60 * 60 * 1000; // 7 ngày

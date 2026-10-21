@@ -16,8 +16,8 @@ import StatusBanner from "../Common/StatusBanner";
 const EMPTY = { currentPassword: "", otp: "", newPassword: "", confirmPassword: "" };
 
 // UC09 Đổi mật khẩu (include UC02 Xác thực OTP, purpose CHANGE_PASSWORD)
-//   Bước 1: nhập mật khẩu hiện tại -> backend kiểm tra và gửi OTP qua email
-//   Bước 2: nhập OTP + mật khẩu mới + xác nhận -> backend cập nhật mật khẩu
+//   Bước 1: nhập mật khẩu hiện tại -> kiểm tra và gửi mã OTP qua email
+//   Bước 2: nhập OTP + mật khẩu mới + xác nhận -> cập nhật mật khẩu
 export default function PasswordSection() {
   const { t } = useTranslation();
   const [step, setStep] = useState(1);

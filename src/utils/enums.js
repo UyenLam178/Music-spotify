@@ -1,4 +1,4 @@
-// Các enum khớp với class diagram / ERD (chuỗi y hệt giá trị lưu ở backend).
+// Các enum dùng chung trong ứng dụng.
 export const Role = Object.freeze({ USER: "USER", ARTIST: "ARTIST", ADMIN: "ADMIN" });
 
 export const AccountStatus = Object.freeze({
@@ -15,7 +15,7 @@ export const ArtistRequestStatus = Object.freeze({
     REJECTED: "REJECTED",
 });
 
-// Trạng thái bài hát (SongStatus ở backend)
+// Trạng thái bài hát
 export const SongStatus = Object.freeze({
     PENDING: "PENDING",
     APPROVED: "APPROVED",

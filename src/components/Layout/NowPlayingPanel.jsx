@@ -177,7 +177,7 @@ export default function NowPlayingPanel() {
 
       <div className="np-media" ref={menuRef}>
         <img className="np-cover" src={song.coverUrl} alt={song.title} />
-        <SongVideo songId={song.id} playing={isPlaying} className="np-video" />
+        <SongVideo src={song.canvasUrl} playing={isPlaying} className="np-video" />
 
         <button
           className="np-more"

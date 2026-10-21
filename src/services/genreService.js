@@ -3,9 +3,8 @@ import { readJson, writeJson } from "./storage";
 // ============================================================================
 // genreService.js
 //
-// Backend CHƯA có module thể loại (không có /api/genres). Vì vậy danh sách thể loại
-// do frontend quản lý: bộ thể loại mặc định bên dưới + thể loại Admin tự thêm
-// (lưu localStorage). Không gọi API /genres nữa để tránh 404 vô ích.
+// Danh sách thể loại gồm bộ thể loại mặc định bên dưới và các thể loại Admin tự thêm
+// (lưu trên trình duyệt).
 //
 // Đây là DANH MỤC cấu hình, KHÔNG phải dữ liệu mẫu: không có bài hát/nghệ sĩ giả nào.
 // ============================================================================

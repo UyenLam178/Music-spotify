@@ -10,7 +10,7 @@ import Modal from "../Common/Modal";
 
 // UC11 Vô hiệu hóa tài khoản -> DISABLED
 // UC12 Xóa tài khoản         -> DELETED (xóa mềm)
-// Cả hai: nhập mật khẩu hiện tại -> backend kiểm tra -> xác nhận -> thực hiện,
+// Cả hai: nhập mật khẩu hiện tại -> kiểm tra -> xác nhận -> thực hiện,
 // rồi kết thúc phiên đăng nhập.
 export default function AccountSection() {
   const { t } = useTranslation();

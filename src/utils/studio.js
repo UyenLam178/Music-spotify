@@ -8,7 +8,7 @@ export const MAX_WAV = 100 * 1024 * 1024;
 
 export const formatDuration = (sec = 0) => `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, "0")}`;
 
-// Backend dùng giờ địa phương không kèm múi giờ ("2026-12-24T20:00:00")
+// Thời gian phát hành là giờ địa phương không kèm múi giờ ("2026-12-24T20:00:00")
 export const toApiDateTime = (v) => (v ? (v.length === 16 ? `${v}:00` : v) : null);
 export const toInputDateTime = (v) => (v ? v.slice(0, 16) : "");
 export const formatDate = (v) => (v ? new Date(v).toLocaleString() : "");

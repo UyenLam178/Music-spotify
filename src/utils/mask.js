@@ -1,5 +1,5 @@
 // Che bớt dữ liệu nhạy cảm khi HIỂN THỊ trên giao diện (chống người đứng sau nhìn lén,
-// chụp màn hình...). Đây chỉ là che hiển thị: dữ liệu vẫn nằm trong response của API.
+// chụp màn hình...). Đây chỉ là che hiển thị, không phải mã hoá dữ liệu.
 
 // "nguyenvan@gmail.com" -> "ng*******@gmail.com"
 export const maskEmail = (email) => {

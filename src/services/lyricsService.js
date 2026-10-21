@@ -3,19 +3,15 @@ import { readJson, writeJson } from "./storage";
 // ============================================================================
 // lyricsService.js
 //
-// Backend (entity Song) CHƯA có trường lời bài hát, và theo yêu cầu thì chỉ chỉnh
-// FRONTEND, nên lời + mốc thời gian được lưu trong localStorage theo id bài hát
-// (cùng cách songMetaService đang lưu thể loại / album):
+// Lời bài hát và mốc thời gian được lưu trên trình duyệt theo id bài hát:
 //
 //     mw_song_lyrics = { [songId]: { lines: [{ time: number|null, text: string }], updatedAt } }
 //
-// time = giây (có phần thập phân). Bài có ít nhất 1 dòng được gắn mốc => "synced"; các dòng
-// chưa gắn mốc được ước lượng (xem fillMissingTimes) để lời vẫn chạy theo nhạc.
-// (chạy theo nhạc, phát sáng dòng hiện tại). Thiếu mốc => hiển thị lời tĩnh.
+// time = giây (có phần thập phân). Bài có ít nhất 1 dòng được gắn mốc => "synced" (lời chạy theo
+// nhạc, phát sáng dòng đang hát); các dòng chưa gắn mốc được ước lượng (xem fillMissingTimes)
+// để lời vẫn chạy theo nhạc. Không có mốc nào => hiển thị lời tĩnh.
 //
-// Lưu ý: dữ liệu nằm trong trình duyệt nên chỉ hiện trên máy đã nhập lời. Muốn mọi
-// người nghe đều thấy, backend cần thêm cột `lyrics` (nên lưu chuỗi LRC, hàm
-// toLrc / parseLrc bên dưới dùng được luôn) — khi đó chỉ cần đổi getLyrics/saveLyrics.
+// Lưu ý: dữ liệu nằm trong trình duyệt nên chỉ hiện trên máy đã nhập lời.
 // ============================================================================
 
 const KEY = "mw_song_lyrics";

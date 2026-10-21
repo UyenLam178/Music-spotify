@@ -51,7 +51,7 @@ export default function Search() {
         };
     }, [query, role, isAuthenticated]);
 
-    // Backend: /api/songs/** cần đăng nhập (mọi role) => khách chưa đăng nhập không tìm được
+    // Phải đăng nhập (mọi vai trò) mới tìm được => khách chưa đăng nhập thì yêu cầu đăng nhập
     if (query.trim() && !isAuthenticated) return <LoginPrompt />;
 
     if (!query.trim()) {

@@ -1,6 +1,6 @@
 // ============================================================================
 // Gửi email tự động từ frontend qua EmailJS (https://www.emailjs.com).
-// Backend hiện chỉ gửi OTP nên mail kết quả duyệt yêu cầu artist được gửi ở đây.
+// Dùng để báo kết quả duyệt yêu cầu trở thành nghệ sĩ qua email.
 //
 // Cấu hình (.env):
 //   VITE_EMAILJS_SERVICE_ID=...   (Email Services -> kết nối Gmail)

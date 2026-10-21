@@ -17,7 +17,7 @@ import LyricsEditor from "../../components/Studio/LyricsEditor";
 import VideoEditor from "../../components/Studio/VideoEditor";
 import { getLyrics } from "../../services/lyricsService";
 
-// Nhãn trạng thái theo SongManageResponse (xem chú thích trong DTO backend)
+// Nhãn trạng thái của bài: chờ duyệt / đã lên lịch / đã phát hành / bị từ chối / đã ẩn
 const songState = (s) => {
   if (s.status === SongStatus.APPROVED) return s.released ? "released" : "scheduled";
   return (s.status || "").toLowerCase();

@@ -53,7 +53,7 @@ export default function Admin() {
     };
   }, [load]);
 
-  // Gọi 1 hành động admin rồi tải lại dữ liệu để hiển thị đúng trạng thái backend
+  // Gọi 1 hành động admin rồi tải lại dữ liệu để hiển thị đúng trạng thái mới nhất
   const run = async (id, fn, successKey) => {
     setStatus({ type: "", message: "" });
     setBusyId(id);
@@ -68,7 +68,7 @@ export default function Admin() {
     }
   };
 
-  // Hạ ARTIST xuống vai trò khác sẽ xóa hồ sơ nghệ sĩ (backend) -> hỏi xác nhận
+  // Hạ ARTIST xuống vai trò khác sẽ xóa hồ sơ nghệ sĩ -> hỏi xác nhận
   const changeRole = (u, role) => {
     if (u.role === Role.ARTIST && !window.confirm(t("admin.confirmDemote", { name: u.artistName || u.username }))) return;
     run(u.id, () => adminService.assignRole(u.id, role), "admin.roleAssigned");
@@ -205,7 +205,7 @@ export default function Admin() {
                           onChange={(e) => changeRole(u, e.target.value)}
                         >
                           {Object.values(Role).map((r) => (
-                            // ARTIST chỉ được cấp qua việc duyệt yêu cầu (backend từ chối gán trực tiếp)
+                            // ARTIST chỉ được cấp qua việc duyệt yêu cầu (không gán trực tiếp được)
                             <option key={r} value={r} disabled={r === Role.ARTIST && u.role !== Role.ARTIST}>
                               {t(`role.${r}`)}
                             </option>

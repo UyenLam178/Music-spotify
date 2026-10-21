@@ -1,10 +1,8 @@
-// Quy tắc validate phía frontend — KHỚP với validation ở backend (RegisterRequest,
-// ResetPasswordRequest, ChangePasswordRequest, VerifyOtpRequest):
-//   username : 5–20 ký tự, chỉ chữ/số/dấu chấm/gạch dưới
+// Quy tắc kiểm tra dữ liệu nhập:
+//   username
 //   email    : tối đa 100 ký tự
-//   password : 6–72 ký tự (backend) + quy ước của UI: có CHỮ HOA, SỐ và KÝ TỰ ĐẶC BIỆT
+//   password : 6–72 ký tự + quy ước của giao diện: có CHỮ HOA, SỐ và KÝ TỰ ĐẶC BIỆT
 //   otp      : đúng 6 chữ số
-// Nếu backend siết/nới khác đi thì chỉ cần sửa tại file này.
 
 export const LIMITS = {
     USERNAME_MIN: 5,
