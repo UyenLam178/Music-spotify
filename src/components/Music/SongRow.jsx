@@ -14,13 +14,19 @@ const formatDuration = (sec = 0) => {
 
 export default function SongRow({ song, index, songList, onAddToPlaylist, showPlays = false, playedAt = null }) {
   const { t } = useTranslation();
-  const { currentSong, isPlaying, playSong, togglePlay } = usePlayer();
+  const { currentSong, isPlaying, playSong, togglePlay, setPanelOpen } = usePlayer();
   const navigate = useNavigate();
   const isCurrent = currentSong?.id === song.id;
 
   const handlePlay = () => {
     if (isCurrent) togglePlay();
     else playSong(song, songList);
+  };
+
+  // Bấm vào tên/ảnh bài: phát và mở thanh "Đang phát" bên phải
+  const handleOpen = () => {
+    if (!isCurrent) playSong(song, songList);
+    setPanelOpen(true);
   };
 
   return (
@@ -36,7 +42,7 @@ export default function SongRow({ song, index, songList, onAddToPlaylist, showPl
         )}
       </div>
 
-      <div className="song-row-info" onClick={handlePlay}>
+      <div className="song-row-info" onClick={handleOpen}>
         <img src={song.coverUrl} alt="" />
         <div>
           <p

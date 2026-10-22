@@ -50,6 +50,9 @@ const vi = {
     search: {
         title: "Tìm kiếm",
         placeholder: "Bạn muốn nghe gì?",
+        recentSongs: "Nghe gần đây",
+        popularSongs: "Nghe nhiều nhất",
+        noSuggest: "Chưa có bài hát nào để gợi ý.",
         browseAll: "Duyệt tất cả",
         songs: "Bài hát",
         albums: "Album",
@@ -491,6 +494,7 @@ const vi = {
         clickToSeek: "Bấm để nghe từ câu này",
         editor: {
             title: "Lời bài hát",
+            btn: "Lời bài hát",
             addBtn: "Thêm lời",
             editBtn: "Sửa lời",
             pasteHint: "Dán lời bài hát, mỗi câu một dòng. Cũng có thể dán định dạng LRC có sẵn mốc thời gian, ví dụ [01:23.45] lời bài hát.",

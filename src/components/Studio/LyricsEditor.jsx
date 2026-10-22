@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { resolveAssetUrl } from "../../services/api";
+import { extractErrorMessage, resolveAssetUrl } from "../../services/api";
 import {
   deleteLyrics,
-  getLyrics,
+  getMyLyrics,
   isSynced,
   parseLyricsText,
   saveLyrics,
@@ -24,16 +24,34 @@ const fmt = (sec) => {
 //   Bước 2 — nghe nhạc, tới câu nào thì bấm "Gắn mốc" (hoặc phím Space) để ghi lại thời điểm
 export default function LyricsEditor({ song, onClose, onSaved }) {
   const { t } = useTranslation();
-  const existing = useMemo(() => getLyrics(song.id), [song.id]);
-  const [step, setStep] = useState(existing ? 2 : 1);
-  const [raw, setRaw] = useState(existing ? toLrc(existing.lines) : "");
-  const [lines, setLines] = useState(existing ? existing.lines : []);
-  const [pointer, setPointer] = useState(() => {
-    if (!existing) return 0;
-    const i = existing.lines.findIndex((l) => l.time == null);
-    return i < 0 ? existing.lines.length : i;
-  });
+  // Lời đã lưu trên backend; nạp khi mở hộp thoại
+  const [loading, setLoading] = useState(true);
+  const [existing, setExisting] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [step, setStep] = useState(1);
+  const [raw, setRaw] = useState("");
+  const [lines, setLines] = useState([]);
+  const [pointer, setPointer] = useState(0);
   const [status, setStatus] = useState({ type: "", message: "" });
+
+  useEffect(() => {
+    let cancelled = false;
+    getMyLyrics(song.id)
+      .then((data) => {
+        if (cancelled || !data) return;
+        setExisting(data);
+        setRaw(toLrc(data.lines));
+        setLines(data.lines);
+        const i = data.lines.findIndex((l) => l.time == null);
+        setPointer(i < 0 ? data.lines.length : i);
+        setStep(2);
+      })
+      .catch((err) => !cancelled && setStatus({ type: "error", message: extractErrorMessage(err) }))
+      .finally(() => !cancelled && setLoading(false));
+    return () => {
+      cancelled = true;
+    };
+  }, [song.id]);
   const audioRef = useRef(null);
   const listRef = useRef(null);
 
@@ -97,7 +115,7 @@ export default function LyricsEditor({ song, onClose, onSaved }) {
 
   const stamped = lines.filter((l) => l.time != null).length;
 
-  const save = () => {
+  const save = async () => {
     const withTime = lines.filter((l) => l.time != null);
     for (let i = 1; i < withTime.length; i += 1) {
       if (withTime[i].time < withTime[i - 1].time) {
@@ -105,20 +123,34 @@ export default function LyricsEditor({ song, onClose, onSaved }) {
         return;
       }
     }
-    saveLyrics(song.id, lines);
-    onSaved(isSynced(lines) ? t("lyrics.editor.savedSynced") : t("lyrics.editor.savedPlain"));
+    setSaving(true);
+    try {
+      await saveLyrics(song.id, lines);
+      onSaved(isSynced(lines) ? t("lyrics.editor.savedSynced") : t("lyrics.editor.savedPlain"));
+    } catch (err) {
+      setStatus({ type: "error", message: extractErrorMessage(err) });
+      setSaving(false);
+    }
   };
 
-  const remove = () => {
-    deleteLyrics(song.id);
-    onSaved(t("lyrics.editor.deleted"));
+  const remove = async () => {
+    setSaving(true);
+    try {
+      await deleteLyrics(song.id);
+      onSaved(t("lyrics.editor.deleted"));
+    } catch (err) {
+      setStatus({ type: "error", message: extractErrorMessage(err) });
+      setSaving(false);
+    }
   };
 
   return (
     <Modal isOpen onClose={onClose} title={`${t("lyrics.editor.title")} — ${song.title}`} width={720}>
       <StatusBanner status={status} />
 
-      {step === 1 && (
+      {loading && <p className="sb-hint">{t("common.loading", { defaultValue: "..." })}</p>}
+
+      {!loading && step === 1 && (
         <>
           <p className="sb-hint" style={{ marginBottom: 8 }}>{t("lyrics.editor.pasteHint")}</p>
           <textarea
@@ -130,7 +162,7 @@ export default function LyricsEditor({ song, onClose, onSaved }) {
           />
           <div className="lyrics-editor-actions">
             {existing && (
-              <Button variant="outline" onClick={remove}>{t("lyrics.editor.delete")}</Button>
+              <Button variant="outline" onClick={remove} isLoading={saving}>{t("lyrics.editor.delete")}</Button>
             )}
             <Button variant="outline" onClick={onClose}>{t("common.cancel")}</Button>
             <Button onClick={goSync}>{t("lyrics.editor.next")}</Button>
@@ -138,7 +170,7 @@ export default function LyricsEditor({ song, onClose, onSaved }) {
         </>
       )}
 
-      {step === 2 && (
+      {!loading && step === 2 && (
         <>
           <p className="sb-hint" style={{ marginBottom: 8 }}>{t("lyrics.editor.syncHint")}</p>
           <audio ref={audioRef} src={resolveAssetUrl(song.audioUrl)} controls className="lyrics-audio" />
@@ -198,7 +230,7 @@ export default function LyricsEditor({ song, onClose, onSaved }) {
               {t("lyrics.editor.back")}
             </Button>
             <Button variant="outline" onClick={onClose}>{t("common.cancel")}</Button>
-            <Button onClick={save}>{t("common.save")}</Button>
+            <Button onClick={save} isLoading={saving}>{t("common.save")}</Button>
           </div>
         </>
       )}

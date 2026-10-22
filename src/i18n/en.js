@@ -50,6 +50,9 @@ const en = {
     search: {
         title: "Search",
         placeholder: "What do you want to listen to?",
+        recentSongs: "Recently played",
+        popularSongs: "Most popular",
+        noSuggest: "No songs to suggest yet.",
         browseAll: "Browse all",
         songs: "Songs",
         albums: "Albums",
@@ -491,6 +494,7 @@ const en = {
         clickToSeek: "Click to play from this line",
         editor: {
             title: "Lyrics",
+            btn: "Lyrics",
             addBtn: "Add lyrics",
             editBtn: "Edit lyrics",
             pasteHint: "Paste the lyrics, one line per sentence. You can also paste LRC format with timestamps, e.g. [01:23.45] lyric line.",

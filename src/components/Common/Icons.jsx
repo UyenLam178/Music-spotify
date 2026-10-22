@@ -62,7 +62,7 @@ export const IconVolumeMute = (p) => (
 );
 export const IconHeart = ({ filled, ...p }) => (
   <svg {...base} {...p} fill={filled ? "var(--color-green)" : "none"} stroke="currentColor" strokeWidth={filled ? 0 : 2}>
-    <path d="M12 21s-7.5-4.6-10-9.3C.5 8 2 4.5 5.5 4c2-.3 3.7.7 4.5 2.2C10.8 4.7 12.5 3.7 14.5 4c3.5.5 5 4 3.5 7.7C15.5 16.4 12 21 12 21" />
+    <path strokeLinejoin="round" d="M12 20.5 10.7 19.3C5.9 15 3 12.3 3 8.9 3 6.2 5.1 4 7.8 4c1.5 0 3 .7 4.2 1.9C13.2 4.7 14.7 4 16.2 4 18.9 4 21 6.2 21 8.9c0 3.4-2.9 6.1-7.7 10.4z" />
   </svg>
 );
 export const IconMore = (p) => (

@@ -75,7 +75,6 @@ export default function LyricsView({ lines, synced, time = null, onSeek, classNa
       onTouchMove={markUserScroll}
       onPointerDown={markUserScroll}
     >
-      {synced && <div className="lyrics-pad" />}
       {lines.map((line, i) => {
         const state = !synced ? "" : i === active ? " active" : i < active ? " past" : "";
         const clickable = synced && onSeek;

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { usePlayer } from "../../context/PlayerContext";
@@ -87,18 +87,20 @@ export default function NowPlayingPanel() {
   };
 
   // Nạp lại lời khi artist vừa lưu / sửa mốc thời gian (tránh giữ bản lời cũ trong panel)
-  const [lyricsVersion, setLyricsVersion] = useState(0);
+  // Lời lấy từ backend theo bài đang phát
+  const [lyricsEntry, setLyricsEntry] = useState({ id: null, data: null });
+  const lyrics = String(lyricsEntry.id) === String(song.id) ? lyricsEntry.data : null;
   useEffect(() => {
-    const bump = () => setLyricsVersion((v) => v + 1);
-    window.addEventListener(LYRICS_CHANGED_EVENT, bump);
-    window.addEventListener("storage", bump); // lưu từ tab khác
+    let cancelled = false;
+    const load = () => getLyrics(song.id).then((l) => !cancelled && setLyricsEntry({ id: song.id, data: l }));
+    load();
+    const onChanged = (e) => String(e.detail?.songId) === String(song.id) && load();
+    window.addEventListener(LYRICS_CHANGED_EVENT, onChanged);
     return () => {
-      window.removeEventListener(LYRICS_CHANGED_EVENT, bump);
-      window.removeEventListener("storage", bump);
+      cancelled = true;
+      window.removeEventListener(LYRICS_CHANGED_EVENT, onChanged);
     };
-  }, []);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const lyrics = useMemo(() => getLyrics(song.id), [song.id, lyricsVersion]);
+  }, [song.id]);
   const liked = isLiked(song.id);
 
   // Đóng menu khi bấm ra ngoài / nhấn Esc

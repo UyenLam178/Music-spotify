@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import {
   NavLink,
+  useLocation,
   useNavigate,
 } from "react-router-dom";
 
@@ -32,6 +33,12 @@ export default function Sidebar({ open = false, onClose }) {
   } = useAuth();
 
   const navigate = useNavigate();
+  const location = useLocation();
+  // "Tìm kiếm" và "Thể loại" cùng trỏ về /search nên NavLink tự so khớp sẽ sáng cả hai -> tự xét theo ?section=
+  const onGenres =
+      location.pathname.startsWith("/genre/") ||
+      (location.pathname === "/search" && new URLSearchParams(location.search).get("section") === "genres");
+  const onSearch = location.pathname === "/search" && !onGenres;
 
   const [playlists, setPlaylists] =
       useState([]);
@@ -163,9 +170,7 @@ export default function Sidebar({ open = false, onClose }) {
 
           <NavLink
               to="/search"
-              className={
-                navItemClass
-              }
+              className={() => `sb-nav-item${onSearch ? " active" : ""}`}
           >
             <IconSearch />
             <span>
@@ -177,9 +182,7 @@ export default function Sidebar({ open = false, onClose }) {
 
           <NavLink
               to="/search?section=genres"
-              className={
-                navItemClass
-              }
+              className={() => `sb-nav-item${onGenres ? " active" : ""}`}
           >
             <IconSearch />
             <span>

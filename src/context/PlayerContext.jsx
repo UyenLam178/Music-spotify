@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { tokenStorage } from "../services/api";
 import { useAuth } from "./AuthContext";
-import { recordPlay } from "../services/songService";
+import { getSongById, recordPlay } from "../services/songService";
 
 const PlayerContext = createContext(null);
 
@@ -122,6 +122,23 @@ export function PlayerProvider({ children }) {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentSong?.id]);
+
+  // Mỗi khi đổi bài, nạp thông tin đầy đủ của bài từ server (video canvasUrl, lượt nghe...) rồi bổ sung
+  // vào hàng đợi. Cần vì bài lấy từ bản lưu cũ (vd: danh sách "đã thích") có thể thiếu hoặc lỗi thời video.
+  const currentId = currentSong?.id;
+  useEffect(() => {
+    if (currentId == null) return undefined;
+    let cancelled = false;
+    getSongById(currentId)
+      .then((full) => {
+        if (cancelled || !full) return;
+        setQueue((q) => q.map((s) => (String(s.id) === String(currentId) ? { ...s, ...full } : s)));
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [currentId]);
 
   const playQueue = (songs, startIndex = 0) => {
     // Lần đầu bấm phát bài: tự bật panel trên màn hình rộng (điện thoại thì mở bằng nút)

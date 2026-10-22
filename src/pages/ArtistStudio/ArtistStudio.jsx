@@ -15,7 +15,6 @@ import StatusBanner from "../../components/Common/StatusBanner";
 import SongWizard from "../../components/Studio/SongWizard";
 import LyricsEditor from "../../components/Studio/LyricsEditor";
 import VideoEditor from "../../components/Studio/VideoEditor";
-import { getLyrics } from "../../services/lyricsService";
 
 // Nhãn trạng thái của bài: chờ duyệt / đã lên lịch / đã phát hành / bị từ chối / đã ẩn
 const songState = (s) => {
@@ -201,7 +200,7 @@ export default function ArtistStudio() {
                           {t("common.edit")}
                         </Button>
                         <Button size="sm" variant="outline" disabled={busy || !s.audioUrl} onClick={() => setModal({ kind: "lyrics", song: s })}>
-                          {getLyrics(s.id) ? t("lyrics.editor.editBtn") : t("lyrics.editor.addBtn")}
+                          {t("lyrics.editor.btn")}
                         </Button>
                         <Button size="sm" variant="outline" disabled={busy || !s.audioUrl} onClick={() => setModal({ kind: "video", song: s })}>
                           {t("songVideo.btn")}

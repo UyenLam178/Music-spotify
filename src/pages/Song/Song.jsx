@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../../context/AuthContext";
@@ -36,18 +36,20 @@ export default function Song() {
     };
   }, [id, isAuthenticated]);
 
-  const [lyricsVersion, setLyricsVersion] = useState(0);
+  const [lyricsEntry, setLyricsEntry] = useState({ id: null, data: null });
+  const lyrics = String(lyricsEntry.id) === String(id) ? lyricsEntry.data : null;
   useEffect(() => {
-    const bump = () => setLyricsVersion((v) => v + 1);
-    window.addEventListener(LYRICS_CHANGED_EVENT, bump);
-    window.addEventListener("storage", bump);
+    if (!isAuthenticated) return undefined;
+    let cancelled = false;
+    const load = () => getLyrics(id).then((l) => !cancelled && setLyricsEntry({ id, data: l }));
+    load();
+    const onChanged = (e) => String(e.detail?.songId) === String(id) && load();
+    window.addEventListener(LYRICS_CHANGED_EVENT, onChanged);
     return () => {
-      window.removeEventListener(LYRICS_CHANGED_EVENT, bump);
-      window.removeEventListener("storage", bump);
+      cancelled = true;
+      window.removeEventListener(LYRICS_CHANGED_EVENT, onChanged);
     };
-  }, []);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const lyrics = useMemo(() => getLyrics(id), [id, lyricsVersion]);
+  }, [id, isAuthenticated]);
 
   if (!isAuthenticated) return <LoginPrompt />;
   if (state.loading) return <Loading full />;

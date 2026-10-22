@@ -1,23 +1,20 @@
-import { readJson, writeJson } from "./storage";
+import api from "./api";
 
 // ============================================================================
 // lyricsService.js
 //
-// Lời bài hát và mốc thời gian được lưu trên trình duyệt theo id bài hát:
+// Lời bài hát được lưu trên backend (không còn lưu trong localStorage):
+//   GET    /songs/{id}/lyrics          người nghe xem lời (bài đã phát hành)
+//   GET    /artist/songs/{id}/lyrics   artist xem lời bài của mình để sửa
+//   PUT    /artist/songs/{id}/lyrics   artist lưu lời  { content: "<văn bản LRC>" }
+//   DELETE /artist/songs/{id}/lyrics   artist xoá lời
 //
-//     mw_song_lyrics = { [songId]: { lines: [{ time: number|null, text: string }], updatedAt } }
-//
-// time = giây (có phần thập phân). Bài có ít nhất 1 dòng được gắn mốc => "synced" (lời chạy theo
-// nhạc, phát sáng dòng đang hát); các dòng chưa gắn mốc được ước lượng (xem fillMissingTimes)
-// để lời vẫn chạy theo nhạc. Không có mốc nào => hiển thị lời tĩnh.
-//
-// Lưu ý: dữ liệu nằm trong trình duyệt nên chỉ hiện trên máy đã nhập lời.
+// Backend trả { synced, content, lines: [{ timeMs, text }] }. Ở giao diện mỗi dòng là
+// { time: giây|null, text }. Backend yêu cầu "mọi dòng đều có mốc" hoặc "không dòng nào có",
+// nên khi lưu các dòng thiếu mốc được ước lượng (fillMissingTimes) trước khi gửi.
 // ============================================================================
 
-const KEY = "mw_song_lyrics";
 export const LYRICS_CHANGED_EVENT = "mw:lyrics-changed";
-
-const readAll = () => readJson(KEY, {});
 
 const cleanLines = (lines) =>
     (Array.isArray(lines) ? lines : [])
@@ -53,29 +50,57 @@ export const fillMissingTimes = (lines) => {
     return out;
 };
 
-export const getLyrics = (songId) => {
-    const entry = readAll()[String(songId)];
-    if (!entry) return null;
-    const clean = cleanLines(entry.lines);
-    const lines = fillMissingTimes(clean);
-    return lines.length ? { lines, synced: isSynced(lines), updatedAt: entry.updatedAt } : null;
+// Phản hồi backend -> { lines: [{ time, text }], synced, content, updatedAt } hoặc null nếu chưa có lời
+const fromResponse = (data) => {
+    const lines = (data?.lines || []).map((l) => ({
+        time: l?.timeMs != null ? Number(l.timeMs) / 1000 : null,
+        text: String(l?.text ?? ""),
+    }));
+    if (!lines.length) return null;
+    return { lines, synced: lines.some((l) => l.time != null), content: data.content || "", updatedAt: data.updatedAt };
 };
 
-export const saveLyrics = (songId, lines) => {
-    const all = readAll();
-    const cleaned = cleanLines(lines);
-    if (!cleaned.length) {
-        delete all[String(songId)];
-    } else {
-        all[String(songId)] = { lines: cleaned, updatedAt: new Date().toISOString() };
+// Người nghe: lời của bài đã phát hành. Lỗi (bài không tồn tại, mất mạng...) => coi như chưa có lời.
+export const getLyrics = async (songId) => {
+    try {
+        const { data } = await api.get(`/songs/${songId}/lyrics`);
+        return fromResponse(data);
+    } catch {
+        return null;
     }
-    writeJson(KEY, all);
+};
+
+// Artist: lời bài của mình (cả bài chưa phát hành) để mở trong hộp thoại sửa. Lỗi được ném ra.
+export const getMyLyrics = async (songId) => {
+    const { data } = await api.get(`/artist/songs/${songId}/lyrics`);
+    return fromResponse(data);
+};
+
+const notifyChanged = (songId) =>
     // Báo cho panel "Đang phát" / trang bài hát đang mở nạp lại lời mới ngay
     window.dispatchEvent(new CustomEvent(LYRICS_CHANGED_EVENT, { detail: { songId: String(songId) } }));
+
+// Lưu (thay toàn bộ) lời. Không còn dòng nào => xoá lời. Lỗi từ backend được ném ra cho giao diện hiển thị.
+export const saveLyrics = async (songId, lines) => {
+    const cleaned = cleanLines(lines);
+    if (!cleaned.length) {
+        await deleteLyrics(songId);
+        return [];
+    }
+    await api.put(`/artist/songs/${songId}/lyrics`, { content: toLrc(fillMissingTimes(cleaned)) });
+    notifyChanged(songId);
     return cleaned;
 };
 
-export const deleteLyrics = (songId) => saveLyrics(songId, []);
+export const deleteLyrics = async (songId) => {
+    try {
+        await api.delete(`/artist/songs/${songId}/lyrics`);
+    } catch (err) {
+        // "Song has no lyrics" (400) => đã không còn lời, coi như xoá xong
+        if (err?.response?.status !== 400) throw err;
+    }
+    notifyChanged(songId);
+};
 
 // ---------------------------------------------------------------------------
 // LRC: "[mm:ss.xx] lời" — định dạng lời có mốc thời gian phổ biến nhất
@@ -108,10 +133,11 @@ export const parseLyricsText = (raw = "") => {
 };
 
 export const formatLrcTime = (sec) => {
-    const s = Math.max(0, sec);
-    const m = Math.floor(s / 60);
-    const rest = (s - m * 60).toFixed(2).padStart(5, "0");
-    return `${String(m).padStart(2, "0")}:${rest}`;
+    const cs = Math.max(0, Math.round(sec * 100)); // làm tròn theo 1/100 giây để không ra "00:60.00"
+    const m = Math.floor(cs / 6000);
+    const s = Math.floor((cs % 6000) / 100);
+    const f = cs % 100;
+    return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}.${String(f).padStart(2, "0")}`;
 };
 
 export const toLrc = (lines) =>
