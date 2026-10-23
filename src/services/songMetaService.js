@@ -3,27 +3,24 @@ import { readJson, writeJson } from "./storage";
 // ============================================================================
 // songMetaService.js
 //
-// Thể loại và album của bài hát được lưu trên trình duyệt theo id bài hát:
-//     { [songId]: { genreId, albumTitle, artistId } }
+// Album của bài hát được lưu trên trình duyệt theo id bài hát:
+//     { [songId]: { albumTitle, artistId } }
 //
-// (không bao giờ là mảng). Mọi dữ liệu cũ lỡ lưu dạng mảng sẽ bị ép về phần tử đầu.
+// Thể loại KHÔNG còn lưu ở đây: lấy từ backend (genreId / genreName trong bài hát).
 //
 // Lưu ý: dữ liệu nằm trong trình duyệt nên chỉ đúng trên máy nghệ sĩ đã đăng bài.
 // ============================================================================
 
 const KEY = "mw_song_meta";
 
-// Ép genreId về 1 giá trị đơn: mảng -> phần tử đầu; rỗng -> null
-export const toSingleGenreId = (value) => {
-    const v = Array.isArray(value) ? value[0] : value;
-    return v === undefined || v === null || v === "" ? null : String(v);
-};
-
 const readAll = () => readJson(KEY, {});
 
 export const getMeta = (songId) => {
     const m = readAll()[String(songId)];
-    return m ? { ...m, genreId: toSingleGenreId(m.genreId) } : null;
+    if (!m) return null;
+    const rest = { ...m }; // bỏ genreId cũ còn sót
+    delete rest.genreId;
+    return rest;
 };
 
 export const setMeta = (songId, patch) => {
@@ -31,7 +28,7 @@ export const setMeta = (songId, patch) => {
     const id = String(songId);
     const next = { ...(all[id] || {}), ...patch };
     delete next.song; // bản sao bài hát cũ không còn dùng: dữ liệu thật lấy từ API
-    next.genreId = toSingleGenreId(next.genreId);
+    delete next.genreId;
     all[id] = next;
     writeJson(KEY, all);
     return next;

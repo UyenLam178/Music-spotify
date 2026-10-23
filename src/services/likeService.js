@@ -18,4 +18,5 @@ export const toLikedSnapshot = (song) => ({
     duration: song.duration,
     audioUrl: song.audioUrl,
     genreId: song.genreId,
+    genreName: song.genreName,
 });

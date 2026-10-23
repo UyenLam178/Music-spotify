@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../../context/AuthContext";
 import { usePlayer } from "../../context/PlayerContext";
@@ -87,6 +87,9 @@ export default function Song() {
             <span>{formatDuration(song.duration)}</span>
             {song.releaseAt && <span>{new Date(song.releaseAt).toLocaleDateString()}</span>}
             {song.albumTitle && <span>♫ {song.albumTitle}</span>}
+            {song.genreName && song.genreId != null && (
+              <Link to={`/genres/${song.genreId}`} className="genre-badge">{song.genreName}</Link>
+            )}
           </div>
           <div className="song-hero-actions">
             <button className="btn-icon play-btn song-play-big" onClick={handlePlay} aria-label={t("player.playPause")}>

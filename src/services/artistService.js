@@ -6,10 +6,11 @@ import api from "./api";
 export const getMySongs = async () => (await api.get("/artist/songs")).data;
 
 // UC26 - Tải lên bài hát (multipart/form-data, KHÔNG phải JSON)
-// { title, audio: File, cover?: File, featuredArtistIds?: number[], releaseAt?: "YYYY-MM-DDTHH:mm:ss" }
-export const uploadSong = async ({ title, audio, cover, featuredArtistIds = [], releaseAt, onUploadProgress }) => {
+// { title, genreId (bắt buộc, lấy từ GET /genres), audio: File, cover?: File, featuredArtistIds?: number[], releaseAt?: "YYYY-MM-DDTHH:mm:ss" }
+export const uploadSong = async ({ title, genreId, audio, cover, featuredArtistIds = [], releaseAt, onUploadProgress }) => {
     const form = new FormData();
     form.append("title", title);
+    form.append("genreId", String(genreId));
     form.append("audio", audio);
     if (cover) form.append("cover", cover);
     // Nhiều nghệ sĩ feat: gửi nhiều dòng cùng tên
@@ -28,7 +29,7 @@ export const uploadSong = async ({ title, audio, cover, featuredArtistIds = [], 
 export const searchArtists = async (keyword) =>
     (await api.get("/artist/search-artists", { params: { keyword } })).data;
 
-// UC29 - Sửa tên + danh sách feat
+// UC29 - Sửa tên + danh sách feat (KHÔNG gửi genreId: thể loại không đổi được sau khi đăng)
 export const updateSong = async (songId, { title, featuredArtistIds = [] }) =>
     (await api.put(`/artist/songs/${songId}`, { title, featuredArtistIds })).data;
 

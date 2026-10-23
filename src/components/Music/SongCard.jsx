@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { usePlayer } from "../../context/PlayerContext";
 import { IconPlay, IconPause } from "../Common/Icons";
@@ -44,6 +44,12 @@ export default function SongCard({ song, songList }) {
         {song.title}
       </p>
       <p className="media-card-sub">{song.artistName}</p>
+      {/* genreName null (bài cũ) => ẩn nhãn */}
+      {song.genreName && song.genreId != null && (
+        <Link to={`/genres/${song.genreId}`} className="genre-badge" onClick={(e) => e.stopPropagation()}>
+          {song.genreName}
+        </Link>
+      )}
     </div>
   );
 }

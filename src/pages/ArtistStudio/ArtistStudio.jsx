@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../../context/AuthContext";
 import * as artistService from "../../services/artistService";
-import * as genreService from "../../services/genreService";
+import { genreColor } from "../../services/genreService";
 import * as songMeta from "../../services/songMetaService";
 import { extractErrorMessage, resolveAssetUrl } from "../../services/api";
 import { SongStatus } from "../../utils/enums";
@@ -69,7 +69,6 @@ export default function ArtistStudio() {
   const { user } = useAuth();
   const userId = user?.id;
   const [songs, setSongs] = useState([]);
-  const [genres, setGenres] = useState([]);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState(null);
   const [status, setStatus] = useState({ type: "", message: "" });
@@ -79,13 +78,12 @@ export default function ArtistStudio() {
 
   const load = useCallback(async () => {
     try {
-      const [list, genreList] = await Promise.all([artistService.getMySongs(), genreService.getGenres()]);
+      const list = await artistService.getMySongs();
       const songList = Array.isArray(list) ? list : [];
-      // Cập nhật bản sao mới nhất để bài hát hiện đúng ở trang thể loại sau khi được duyệt
+      // Dọn album đã lưu của các bài đã bị xóa
       songMeta.syncArtistSongs(userId, songList);
       if (mounted.current) {
         setSongs(songList);
-        setGenres(genreList);
       }
     } catch (err) {
       if (mounted.current) setStatus({ type: "error", message: extractErrorMessage(err, t("studio.loadFailed")) });
@@ -154,7 +152,6 @@ export default function ArtistStudio() {
                 const state = songState(s);
                 const busy = busyId === s.id;
                 const meta = songMeta.getMeta(s.id);
-                const genre = genres.find((g) => String(g.id) === String(meta?.genreId));
                 const canSchedule = s.status !== SongStatus.REJECTED && !(s.status === SongStatus.APPROVED && s.released);
                 return (
                   <tr key={s.id} data-song={s.title}>
@@ -175,10 +172,10 @@ export default function ArtistStudio() {
                       </div>
                     </td>
                     <td>
-                      {genre ? (
+                      {s.genreName ? (
                         <span className="genre-pill">
-                          <i className="genre-dot" style={{ background: `#${genre.color}` }} />
-                          {genre.name}
+                          <i className="genre-dot" style={{ background: `#${genreColor(s.genreId)}` }} />
+                          {s.genreName}
                         </span>
                       ) : (
                         "—"

@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useParams } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import { PlayerProvider } from "./context/PlayerContext";
 import { LikeProvider } from "./context/LikeContext";
@@ -10,6 +10,7 @@ import Home from "./pages/Home/Home";
 import Search from "./pages/Search/Search";
 import Library from "./pages/Library/Library";
 import Genre from "./pages/Genre/Genre";
+import Genres from "./pages/Genres/Genres";
 import Liked from "./pages/Liked/Liked";
 import Playlist from "./pages/Playlist/Playlist";
 import Artist from "./pages/Artist/Artist";
@@ -28,6 +29,11 @@ import NotFound from "./pages/NotFound/NotFound";
 
 import "./index.css";
 import "./App.css";
+
+function LegacyGenreRedirect() {
+  const { genreId } = useParams();
+  return <Navigate to={`/genres/${genreId}`} replace />;
+}
 
 function App() {
   return (
@@ -50,7 +56,10 @@ function App() {
                 <Route path="/" element={<Home />} />
                 <Route path="/search" element={<Search />} />
                 <Route path="/library" element={<Library />} />
-                <Route path="/genre/:id" element={<Genre />} />
+                <Route path="/genres" element={<Genres />} />
+                <Route path="/genres/:genreId" element={<Genre />} />
+                {/* đường dẫn cũ */}
+                <Route path="/genre/:genreId" element={<LegacyGenreRedirect />} />
                 <Route path="/liked" element={<Liked />} />
                 <Route path="/playlist/:id" element={<Playlist />} />
                 <Route path="/artist/:id" element={<Artist />} />

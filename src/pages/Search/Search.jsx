@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Navigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../../context/AuthContext";
 import * as songService from "../../services/songService";
@@ -16,16 +16,11 @@ export default function Search() {
     const { user, isAuthenticated } = useAuth();
     const role = user?.role;
     const query = searchParams.get("q") || "";
-    const [genres, setGenres] = useState([]);
     // Gợi ý khi chưa gõ gì: bài nghe gần đây + bài được nghe nhiều nhất
     const [suggest, setSuggest] = useState({ loading: true, recent: [], popular: [] });
     const [results, setResults] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState("");
-
-    useEffect(() => {
-        songService.getGenres().then(setGenres);
-    }, []);
 
     useEffect(() => {
         if (!isAuthenticated || showGenres) return undefined;
@@ -73,6 +68,9 @@ export default function Search() {
         };
     }, [query, role, isAuthenticated]);
 
+    // Link cũ /search?section=genres -> trang Genres mới
+    if (showGenres && !query.trim()) return <Navigate to="/genres" replace />;
+
     // Phải đăng nhập (mọi vai trò) mới tìm được => khách chưa đăng nhập thì yêu cầu đăng nhập
     if (query.trim() && !isAuthenticated) return <LoginPrompt />;
 
@@ -107,21 +105,6 @@ export default function Search() {
                     </section>
                 )}
                 {!recent.length && !popular.length && <p className="sb-hint">{t("search.noSuggest")}</p>}
-            </div>
-        );
-    }
-
-    if (!query.trim()) {
-        return (
-            <div>
-                <h1 style={{ fontSize: 24, marginBottom: 20 }}>{t("search.browseAll")}</h1>
-                <div className="genre-grid">
-                    {genres.map((g) => (
-                        <Link key={g.id} to={`/genre/${g.id}`} className="genre-tile" style={{ background: `#${g.color}` }}>
-                            {g.name}
-                        </Link>
-                    ))}
-                </div>
             </div>
         );
     }

@@ -38,9 +38,9 @@ export const toListenerSong = (s) => {
         audioUrl: resolveAssetUrl(s.audioUrl),
         playCount: s.playCount ?? 0,
         releaseAt: s.releaseAt,
-        // Thể loại lấy từ thông tin lưu theo bài.
-        // Luôn là 1 giá trị đơn: 1 bài chỉ thuộc 1 thể loại.
-        genreId: s.genreId != null ? String(s.genreId) : s.genre?.id != null ? String(s.genre.id) : meta?.genreId ?? null,
+        // Thể loại do backend trả về; bài cũ có thể là null (khi đó không hiện nhãn)
+        genreId: s.genreId ?? null,
+        genreName: s.genreName || null,
     };
 };
 
@@ -172,13 +172,21 @@ export const getHomeData = async () => {
 };
 
 // ----------------------------------------------------------------------------
-// Thể loại — 1 bài CHỈ thuộc đúng 1 thể loại (so khớp chặt theo genreId của bài)
+// Thể loại — 1 bài chỉ thuộc đúng 1 thể loại (backend lọc theo genreId, có phân trang)
 // ----------------------------------------------------------------------------
 export const getGenres = () => genreService.getGenres();
 
-export const getSongsByGenre = async (genreId) => {
-    const songs = await getAllSongs();
-    return songs.filter((s) => s.genreId != null && String(s.genreId) === String(genreId));
+// GET /songs?genreId=&page=&size= -> { songs, page, size, totalElements, totalPages }
+// genreId không tồn tại => backend trả content rỗng (200).
+export const getSongsByGenre = async (genreId, { page = 0, size = 20 } = {}) => {
+    const { data } = await api.get("/songs", { params: { genreId, page, size } });
+    return {
+        songs: (data?.content || []).map(toListenerSong),
+        page: data?.page ?? page,
+        size: data?.size ?? size,
+        totalElements: data?.totalElements ?? 0,
+        totalPages: data?.totalPages ?? 0,
+    };
 };
 
 // ----------------------------------------------------------------------------

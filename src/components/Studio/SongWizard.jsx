@@ -5,6 +5,7 @@ import * as artistService from "../../services/artistService";
 import * as genreService from "../../services/genreService";
 import * as songMeta from "../../services/songMetaService";
 import { extractErrorMessage, resolveAssetUrl } from "../../services/api";
+import { genreColor } from "../../services/genreService";
 import { placeholderCover } from "../../utils/cover";
 import {
   MAX_ALBUM, MAX_IMAGE, MAX_MP3, MAX_TITLE, MAX_WAV,
@@ -52,13 +53,15 @@ export default function SongWizard({ song, onClose, onSaved }) {
 
   const [step, setStep] = useState(1);
   const [title, setTitle] = useState(song?.title || "");
-  const [genreId, setGenreId] = useState(meta?.genreId ?? "");
+  // Sửa bài: thể loại chỉ đọc (lấy từ bài); thêm mới: chọn 1 thể loại từ API
+  const [genreId, setGenreId] = useState(song?.genreId != null ? String(song.genreId) : "");
   const [feat, setFeat] = useState(song?.featuredArtists || []);
   const [audio, setAudio] = useState(null);
   const [cover, setCover] = useState(null);
   const [releaseAt, setReleaseAt] = useState("");
   const [albumTitle, setAlbumTitle] = useState(meta?.albumTitle || "");
   const [genres, setGenres] = useState([]);
+  const [genresError, setGenresError] = useState("");
   const [created, setCreated] = useState(null); // bài vừa tải lên (chế độ thêm mới)
   const [progress, setProgress] = useState(0);
   const [errors, setErrors] = useState({});
@@ -67,14 +70,19 @@ export default function SongWizard({ song, onClose, onSaved }) {
 
   useEffect(() => {
     let cancelled = false;
-    genreService.getGenres().then((list) => !cancelled && setGenres(list));
+    genreService
+      .getGenres()
+      .then((list) => !cancelled && setGenres(list))
+      .catch((err) => !cancelled && setGenresError(extractErrorMessage(err, t("genre.loadFailed"))));
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [t]);
 
   const myAlbums = useMemo(() => songMeta.getMyAlbums(user?.id), [user?.id]);
-  const genre = genres.find((g) => String(g.id) === String(genreId)) || null;
+  const genre =
+    genres.find((g) => String(g.id) === String(genreId)) ||
+    (editing && song.genreName ? { id: song.genreId, name: song.genreName, color: genreColor(song.genreId) } : null);
   const artistName = user?.artistName || user?.username || "";
   const avatar = user?.avatarUrl ? resolveAssetUrl(user.avatarUrl) : "";
 
@@ -96,7 +104,7 @@ export default function SongWizard({ song, onClose, onSaved }) {
     const errs = {};
     if (!title.trim()) errs.title = t("studio.titleRequired");
     else if (title.trim().length > MAX_TITLE) errs.title = t("studio.titleLength", { max: MAX_TITLE });
-    if (!genreId) errs.genre = t("wizard.genreRequired");
+    if (!editing && !genreId) errs.genre = t("wizard.genreRequired");
     return errs;
   };
 
@@ -145,13 +153,14 @@ export default function SongWizard({ song, onClose, onSaved }) {
     try {
       const resp = await artistService.uploadSong({
         title: title.trim(),
+        genreId: Number(genreId),
         audio,
         cover,
         featuredArtistIds: feat.map((a) => a.id),
         releaseAt: toApiDateTime(releaseAt),
         onUploadProgress: (e) => e.total && setProgress(Math.round((e.loaded * 100) / e.total)),
       });
-      songMeta.setMeta(resp.id, { genreId, albumTitle: "", artistId: resp.artistId ?? user?.id });
+      songMeta.setMeta(resp.id, { albumTitle: "", artistId: resp.artistId ?? user?.id });
       setCreated(resp);
       setErrors({});
       setStep(3);
@@ -182,7 +191,7 @@ export default function SongWizard({ song, onClose, onSaved }) {
     try {
       const featuredArtistIds = feat.map((a) => a.id);
       const resp = await artistService.updateSong(song.id, { title: title.trim(), featuredArtistIds });
-      songMeta.setMeta(song.id, { genreId, albumTitle: album, artistId: resp.artistId ?? song.artistId });
+      songMeta.setMeta(song.id, { albumTitle: album, artistId: resp.artistId ?? song.artistId });
       if (cover) {
         await artistService.updateCover(song.id, cover);
       }
@@ -219,26 +228,46 @@ export default function SongWizard({ song, onClose, onSaved }) {
 
           <div className="field">
             <label id="wz-genre-label">{t("wizard.genreLabel")}</label>
-            <div className="wz-genres" role="radiogroup" aria-labelledby="wz-genre-label">
-              {genres.map((g) => {
-                const selected = String(g.id) === String(genreId);
-                return (
-                  <button
-                    key={g.id}
-                    type="button"
-                    role="radio"
-                    aria-checked={selected}
-                    className={`wz-genre${selected ? " selected" : ""}`}
-                    onClick={() => setGenreId(g.id)}
-                  >
-                    <GenreDot color={g.color} />
-                    <span>{g.name}</span>
-                    {selected && <IconCheck className="wz-genre-check" />}
-                  </button>
-                );
-              })}
-            </div>
-            {errors.genre && <span className="field-error">{errors.genre}</span>}
+            {editing ? (
+              <>
+                {genre ? (
+                  <div>
+                    <span className="genre-pill">
+                      <GenreDot color={genre.color} />
+                      {genre.name}
+                    </span>
+                  </div>
+                ) : (
+                  <span className="sb-hint">{t("wizard.genreNone")}</span>
+                )}
+                <span className="sb-hint">{t("wizard.genreHint")}</span>
+              </>
+            ) : (
+              <>
+                <div className="wz-genres" role="radiogroup" aria-labelledby="wz-genre-label">
+                  {genres.map((g) => {
+                    const selected = String(g.id) === String(genreId);
+                    return (
+                      <button
+                        key={g.id}
+                        type="button"
+                        role="radio"
+                        aria-checked={selected}
+                        className={`wz-genre${selected ? " selected" : ""}`}
+                        onClick={() => setGenreId(String(g.id))}
+                      >
+                        <GenreDot color={g.color} />
+                        <span>{g.name}</span>
+                        {selected && <IconCheck className="wz-genre-check" />}
+                      </button>
+                    );
+                  })}
+                </div>
+                {genresError && <span className="field-error">{genresError}</span>}
+                {errors.genre && <span className="field-error">{errors.genre}</span>}
+                <span className="sb-hint">{t("wizard.genreHint")}</span>
+              </>
+            )}
           </div>
 
           <div className="field">

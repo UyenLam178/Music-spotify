@@ -2,13 +2,11 @@ import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../../context/AuthContext";
 import * as adminService from "../../services/adminService";
-import * as genreService from "../../services/genreService";
 import { extractErrorMessage } from "../../services/api";
 import { Role, AccountStatus } from "../../utils/enums";
 import Button from "../../components/Common/Button";
 import Loading from "../../components/Common/Loading";
 import StatusBanner from "../../components/Common/StatusBanner";
-import GenreModal from "../../components/Admin/GenreModal";
 import SongModeration from "../../components/Admin/SongModeration";
 
 // Trang quản trị (chỉ ADMIN, xem App.jsx):
@@ -21,8 +19,6 @@ export default function Admin() {
   const [tab, setTab] = useState("users");
   const [users, setUsers] = useState([]);
   const [requests, setRequests] = useState([]);
-  const [genres, setGenres] = useState([]);
-  const [genreModal, setGenreModal] = useState(false);
   const [pendingSongs, setPendingSongs] = useState(null);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState(null);
@@ -30,14 +26,12 @@ export default function Admin() {
 
   const load = useCallback(async () => {
     try {
-      const [u, r, g] = await Promise.all([
+      const [u, r] = await Promise.all([
         adminService.getAllUsers(),
         adminService.getPendingArtistRequests(),
-        genreService.getGenres(),
       ]);
       setUsers(u);
       setRequests(r);
-      setGenres(g);
     } catch (err) {
       setStatus({ type: "error", message: extractErrorMessage(err, t("admin.loadFailed")) });
     } finally {
@@ -74,14 +68,6 @@ export default function Admin() {
     run(u.id, () => adminService.assignRole(u.id, role), "admin.roleAssigned");
   };
 
-  // Thêm thể loại (sau khi admin đã xác nhận màu trong GenreModal)
-  const createGenre = async (payload) => {
-    const created = await genreService.createGenre(payload);
-    setGenres(await genreService.getGenres());
-    setGenreModal(false);
-    setStatus({ type: "success", message: t("adminGenre.created", { name: created.name }) });
-  };
-
   if (loading) return <Loading full />;
 
   return (
@@ -109,14 +95,6 @@ export default function Admin() {
         </button>
         <button
           role="tab"
-          aria-selected={tab === "genres"}
-          className={tab === "genres" ? "active" : ""}
-          onClick={() => setTab("genres")}
-        >
-          {t("adminGenre.tab")} ({genres.length})
-        </button>
-        <button
-          role="tab"
           aria-selected={tab === "songs"}
           className={tab === "songs" ? "active" : ""}
           onClick={() => setTab("songs")}
@@ -131,36 +109,6 @@ export default function Admin() {
 
       {tab === "songs" ? (
         <SongModeration onPendingCount={setPendingSongs} />
-      ) : tab === "genres" ? (
-        <>
-          <div className="studio-head">
-            <p className="sb-hint admin-note" style={{ margin: 0 }}>{t("adminGenre.note")}</p>
-            <Button onClick={() => setGenreModal(true)}>+ {t("adminGenre.add")}</Button>
-          </div>
-          <div className="table-wrap">
-            <table className="data-table" id="admin-genres">
-              <thead>
-                <tr>
-                  <th>{t("adminGenre.colGenre")}</th>
-                  <th>{t("adminGenre.colColor")}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {genres.map((g) => (
-                  <tr key={g.id} data-genre={g.name}>
-                    <td>
-                      <span className="genre-pill">
-                        <i className="genre-dot" style={{ background: `#${g.color}` }} />
-                        {g.name}
-                      </span>
-                    </td>
-                    <td><code>#{g.color}</code></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </>
       ) : tab === "users" ? (
         <div className="table-wrap">
           <table className="data-table" id="admin-users">
@@ -284,9 +232,6 @@ export default function Admin() {
         </div>
       )}
 
-      {genreModal && (
-        <GenreModal existing={genres} onClose={() => setGenreModal(false)} onCreate={createGenre} />
-      )}
     </div>
   );
 }
