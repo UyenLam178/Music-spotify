@@ -2,6 +2,15 @@ import { createContext, useContext, useEffect, useMemo, useRef, useState } from 
 import { tokenStorage } from "../services/api";
 import { useAuth } from "./AuthContext";
 import { getSongById, recordPlay } from "../services/songService";
+import { readJson, writeJson } from "../services/storage";
+
+// Lưu âm lượng người dùng đã chỉnh để lần sau vào web vẫn giữ nguyên
+const VOLUME_KEY = "player.volume";
+const DEFAULT_VOLUME = 0.8;
+const loadVolume = () => {
+  const v = Number(readJson(VOLUME_KEY, DEFAULT_VOLUME));
+  return Number.isFinite(v) ? Math.min(1, Math.max(0, v)) : DEFAULT_VOLUME;
+};
 
 const PlayerContext = createContext(null);
 
@@ -14,7 +23,9 @@ export function PlayerProvider({ children }) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [volume, setVolume] = useState(0.8);
+  const [volume, setVolume] = useState(loadVolume);
+  // Âm lượng trước khi tắt tiếng, để bấm nút loa lần nữa thì khôi phục đúng mức cũ
+  const lastVolumeRef = useRef(volume > 0 ? volume : DEFAULT_VOLUME);
   const [isShuffle, setIsShuffle] = useState(false);
   const [repeatMode, setRepeatMode] = useState("off"); // off | all | one
   // Panel "Đang phát" bên phải (video + lời + menu ⋯)
@@ -78,7 +89,11 @@ export function PlayerProvider({ children }) {
 
   useEffect(() => {
     audioRef.current.volume = volume;
+    writeJson(VOLUME_KEY, volume);
+    if (volume > 0) lastVolumeRef.current = volume;
   }, [volume]);
+
+  const toggleMute = () => setVolume(volume > 0 ? 0 : lastVolumeRef.current);
 
   // Giữ trạng thái nút Play/Pause khớp với phần tử audio thật
   // (trình duyệt có thể tự dừng khi đổi tab / chặn autoplay / file lỗi).
@@ -197,6 +212,7 @@ export function PlayerProvider({ children }) {
       isShuffle,
       repeatMode,
       setVolume,
+      toggleMute,
       setIsShuffle,
       setRepeatMode: () =>
         setRepeatMode((m) => (m === "off" ? "all" : m === "all" ? "one" : "off")),

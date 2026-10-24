@@ -37,6 +37,7 @@ export default function MusicPlayer() {
     isShuffle,
     repeatMode,
     setVolume,
+    toggleMute,
     setIsShuffle,
     setRepeatMode,
     togglePlay,
@@ -108,6 +109,8 @@ export default function MusicPlayer() {
             max={duration || 0}
             value={progress}
             onChange={(e) => seek(Number(e.target.value))}
+            style={{ "--fill": `${duration ? Math.min(100, (progress / duration) * 100) : 0}%` }}
+            aria-label={t("player.seek", { defaultValue: "Seek" })}
             className="progress-slider"
           />
           <span className="player-time">{formatTime(duration)}</span>
@@ -132,7 +135,7 @@ export default function MusicPlayer() {
         >
           <IconLyrics />
         </button>
-        <button className="btn-icon player-extra" onClick={() => setVolume(volume > 0 ? 0 : 0.8)}>
+        <button className="btn-icon player-extra" onClick={toggleMute} aria-label={t("player.volume", { defaultValue: "Volume" })}>
           {volume > 0 ? <IconVolume /> : <IconVolumeMute />}
         </button>
         <input
@@ -142,6 +145,8 @@ export default function MusicPlayer() {
           step={0.01}
           value={volume}
           onChange={(e) => setVolume(Number(e.target.value))}
+          style={{ "--fill": `${volume * 100}%` }}
+          aria-label={t("player.volume", { defaultValue: "Volume" })}
           className="progress-slider volume-slider player-extra"
         />
       </div>

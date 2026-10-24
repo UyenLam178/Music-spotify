@@ -1996,3 +1996,175 @@ body.np-resizing {
 .genre-badge:hover { background: var(--color-bg-highlight-hover); }
 .genre-pager { display: flex; align-items: center; justify-content: center; gap: 16px; margin: 20px 0; }
 .genre-pager .sb-hint { padding: 0; }
+
+/* ======================================================================
+   Thanh trượt có phần đã chạy / âm lượng được tô màu (biến --fill do JS đặt)
+   ====================================================================== */
+.progress-slider {
+  background: linear-gradient(var(--color-text), var(--color-text)) 0 / var(--fill, 0%) 100% no-repeat #4d4d4d;
+}
+.progress-slider:hover {
+  background-image: linear-gradient(var(--color-green), var(--color-green));
+}
+.progress-slider::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border: 0;
+  border-radius: 50%;
+  background: #fff;
+}
+.progress-slider::-moz-range-track {
+  background: transparent;
+}
+
+/* ======================================================================
+   Tinh chỉnh giao diện điện thoại
+   ====================================================================== */
+@media (max-width: 900px) {
+  /* Tên bài dài không được đè lên nút tim / thời lượng */
+  .song-row-info > div {
+    min-width: 0;
+    flex: 1;
+  }
+  .song-row-actions {
+    gap: 4px;
+  }
+  .song-row-duration {
+    min-width: 32px;
+    font-size: 12px;
+  }
+  .song-row-index {
+    min-width: 0;
+  }
+
+  /* Header gọn, vùng bấm đủ lớn */
+  .app-header {
+    height: 56px;
+    background: transparent;
+  }
+  .header-menu-btn {
+    width: 40px;
+    height: 40px;
+  }
+  .search-bar {
+    min-height: 40px;
+  }
+  .user-pill {
+    background: var(--color-bg-highlight);
+  }
+  .user-pill .user-avatar {
+    width: 30px;
+    height: 30px;
+  }
+
+  /* Tiêu đề trang chủ đỡ to */
+  .content-inner h1 {
+    font-size: 24px;
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+  }
+  .section-head {
+    margin-bottom: 10px;
+  }
+  .media-card-title {
+    font-size: 14px;
+  }
+
+  /* Trang chi tiết bài hát: meta xuống dòng gọn gàng */
+  .song-hero-meta {
+    gap: 8px 14px;
+    font-size: 13px;
+  }
+  .song-hero-actions {
+    gap: 12px;
+  }
+
+  /* Trình phát mini: ảnh + tên | prev / play / next, thanh tiến trình bên dưới */
+  .app-player-row {
+    padding-bottom: max(6px, env(safe-area-inset-bottom));
+  }
+  .player-bar {
+    gap: 2px 8px;
+    padding: 8px 12px 6px;
+    background: var(--color-bg-highlight);
+    box-shadow: 0 -6px 20px rgba(0, 0, 0, 0.45);
+  }
+  .player-bar-empty {
+    background: var(--color-bg-elevated);
+    box-shadow: none;
+  }
+  .player-now-playing {
+    gap: 10px;
+  }
+  .player-cover {
+    width: 46px;
+    height: 46px;
+    border-radius: 6px;
+  }
+  .player-track-title {
+    font-size: 14px;
+  }
+  .player-track-artist {
+    font-size: 12px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .player-track-meta {
+    flex: 1;
+  }
+  /* Nút tim ở thanh nhỏ bị chật: ẩn, vẫn thả tim được ở panel "Đang phát" và trang bài hát */
+  .player-now-playing .btn-icon {
+    display: none;
+  }
+  .player-controls {
+    gap: 2px;
+  }
+  .player-controls .btn-icon {
+    width: 40px;
+    height: 40px;
+  }
+  .player-controls .play-btn {
+    width: 44px;
+    height: 44px;
+  }
+  .player-progress {
+    gap: 8px;
+  }
+  .player-time {
+    min-width: 30px;
+    font-size: 11px;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+  /* Vùng chạm của thanh trượt cao hơn nhưng nét vẽ vẫn mảnh */
+  .progress-slider {
+    height: 4px;
+    background-clip: content-box;
+    padding: 10px 0;
+    box-sizing: content-box;
+    background-origin: content-box;
+    touch-action: none;
+  }
+  .progress-slider::-webkit-slider-thumb {
+    width: 14px;
+    height: 14px;
+  }
+
+  /* Drawer: chừa vùng an toàn phía dưới */
+  .sidebar {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+@media (max-width: 360px) {
+  .player-controls .btn-icon {
+    width: 36px;
+    height: 36px;
+  }
+  .card-grid,
+  .circle-grid {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 10px;
+  }
+}
