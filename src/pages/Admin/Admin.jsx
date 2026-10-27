@@ -26,12 +26,15 @@ export default function Admin() {
 
   const load = useCallback(async () => {
     try {
-      const [u, r] = await Promise.all([
+      const [u, r, songs] = await Promise.all([
         adminService.getAllUsers(),
         adminService.getPendingArtistRequests(),
+        // Lấy sẵn số bài chờ duyệt để hiện trên tab "Duyệt nhạc" ngay khi vào trang (size=1 vì chỉ cần totalElements)
+        adminService.getSongs({ status: "PENDING", size: 1 }).catch(() => null),
       ]);
       setUsers(u);
       setRequests(r);
+      if (songs) setPendingSongs(songs.totalElements ?? 0);
     } catch (err) {
       setStatus({ type: "error", message: extractErrorMessage(err, t("admin.loadFailed")) });
     } finally {
