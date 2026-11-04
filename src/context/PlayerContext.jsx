@@ -1,8 +1,8 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { tokenStorage } from "../services/api";
 import { useAuth } from "./AuthContext";
-import { getSongById, recordPlay, getArtistById } from "../services/songService";
-import { getSongsByGenres } from "../services/recommendationService";
+import { getSongById, recordPlay } from "../services/songService";
+import { getSimilarSongs } from "../services/recommendationService";
 import { readJson, writeJson } from "../services/storage";
 
 // Lưu âm lượng người dùng đã chỉnh để lần sau vào web vẫn giữ nguyên
@@ -13,7 +13,8 @@ const loadVolume = () => {
   return Number.isFinite(v) ? Math.min(1, Math.max(0, v)) : DEFAULT_VOLUME;
 };
 
-const MAX_SAME_ARTIST = 3; // max_same trong recommender.py
+const NEXT_BATCH = 10; // số bài backend gợi ý mỗi lần nối thêm khi nghe hết bài
+const EXCLUDE_MAX = 30; // chỉ gửi tối đa ngần này id bài vừa phát (tránh URL quá dài)
 
 const PlayerContext = createContext(null);
 
@@ -36,64 +37,24 @@ export function PlayerProvider({ children }) {
 
   const currentSong = currentIndex >= 0 ? queue[currentIndex] : null;
 
-  // Gợi ý tự phát chỉ dựa trên NGHỆ SĨ và THỂ LOẠI của bài đang phát, không dựa trên lịch sử nghe.
   const loadingRecRef = useRef(false);
-  const artistSongsRef = useRef(new Map()); // artistId -> các bài của nghệ sĩ (chính + feat), cache trong phiên
 
-  const fetchArtistSongs = async (artistId) => {
-    const key = String(artistId);
-    if (!artistSongsRef.current.has(key)) {
-      const artist = await getArtistById(artistId).catch(() => null);
-      artistSongsRef.current.set(key, artist?.topSongs || []);
-    }
-    return artistSongsRef.current.get(key);
-  };
-
-  // Khớp recommend_artist_db (recommender.py): sau bài đang nghe chỉ phát tối đa MAX_SAME_ARTIST bài
-  // liên quan của cùng nghệ sĩ; quá giới hạn hoặc nghệ sĩ không đủ bài thì sang nghệ sĩ khác cùng thể loại.
-  const sameArtistCountRef = useRef(0); // số bài cùng nghệ sĩ đã tự phát nối tiếp kể từ lần người dùng chọn bài / đổi nghệ sĩ
-
-  // Chọn bài tự phát tiếp khi hết hàng đợi, theo thứ tự:
-  //  1) bài khác của CHÍNH nghệ sĩ bài vừa phát (gồm cả bài được feat), tối đa MAX_SAME_ARTIST bài liền nhau,
-  //  2) bài CÙNG THỂ LOẠI của nghệ sĩ khác (bài đó là bài đầu của lượt nghệ sĩ mới, lại được tối đa MAX_SAME_ARTIST bài),
-  //  3) cả 2 đều không có: nếu nghệ sĩ còn bài khác thì phát tiếp bài của họ, không thì trả null để dừng.
-  const pickNextSong = async (song) => {
-    // Chỉ loại chính bài đang phát (không xét lịch sử nghe)
-    const isFresh = (x) => x && String(x.id) !== String(song.id);
-    // recommender.py bốc ngẫu nhiên trong nhóm nhiều lượt nghe nhất => chọn ngẫu nhiên trong 10 bài đầu
-    const pickOne = (list) => list[Math.floor(Math.random() * Math.min(list.length, 10))];
-
-    const sameArtistFresh =
-      song.artistId != null ? (await fetchArtistSongs(song.artistId)).filter(isFresh) : [];
-    if (sameArtistFresh.length && sameArtistCountRef.current < MAX_SAME_ARTIST) {
-      sameArtistCountRef.current += 1;
-      return pickOne(sameArtistFresh);
-    }
-
-    if (song.genreId != null) {
-      const others = (await getSongsByGenres([song.genreId], 10)).filter(
-        (x) => isFresh(x) && String(x.artistId) !== String(song.artistId)
-      );
-      if (others.length) {
-        sameArtistCountRef.current = 0; // sang nghệ sĩ mới, tính lại từ đầu
-        return others[0];
-      }
-    }
-
-    if (sameArtistFresh.length) return pickOne(sameArtistFresh);
-    return null;
-  };
-
+  // Hết hàng đợi -> xin backend danh sách phát tiếp (GET /songs/{id}/recommendations?limit=10&excludeIds=...).
+  // Backend tự xếp: tối đa 3 bài cùng nghệ sĩ -> bài cùng thể loại của nghệ sĩ khác -> bài nhiều lượt nghe của nghệ sĩ khác.
+  // excludeIds là các bài vừa phát trong hàng đợi để không bị phát lại. Không có gợi ý hoặc lỗi thì dừng.
   const autoplayNext = async () => {
     if (loadingRecRef.current || !currentSong) return;
     loadingRecRef.current = true;
     try {
-      const next = await pickNextSong(currentSong);
-      if (!next) {
+      const excludeIds = queue.slice(-EXCLUDE_MAX).map((x) => x.id);
+      const recs = await getSimilarSongs(currentSong.id, NEXT_BATCH, undefined, excludeIds);
+      const inQueue = new Set(queue.map((x) => String(x.id)));
+      const fresh = recs.filter((x) => !inQueue.has(String(x.id)));
+      if (!fresh.length) {
         setIsPlaying(false);
         return;
       }
-      setQueue([...queue, next]);
+      setQueue([...queue, ...fresh]);
       setCurrentIndex(queue.length);
       setIsPlaying(true);
     } catch {
@@ -226,7 +187,6 @@ export function PlayerProvider({ children }) {
   }, [currentId]);
 
   const playQueue = (songs, startIndex = 0) => {
-    sameArtistCountRef.current = 0; // người dùng tự chọn bài: bắt đầu lượt nghệ sĩ mới
     // Lần đầu bấm phát bài: tự bật panel trên màn hình rộng (điện thoại thì mở bằng nút)
     if (currentIndex < 0 && window.innerWidth > 900) setPanelOpen(true);
     setQueue(songs);
