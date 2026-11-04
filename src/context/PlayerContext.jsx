@@ -36,8 +36,7 @@ export function PlayerProvider({ children }) {
 
   const currentSong = currentIndex >= 0 ? queue[currentIndex] : null;
 
-  // Các bài đã phát trong phiên: không phát lại, để tự động phát không quay vòng A -> B -> A -> B
-  const playedRef = useRef(new Set());
+  // Gợi ý tự phát chỉ dựa trên NGHỆ SĨ và THỂ LOẠI của bài đang phát, không dựa trên lịch sử nghe.
   const loadingRecRef = useRef(false);
   const artistSongsRef = useRef(new Map()); // artistId -> các bài của nghệ sĩ (chính + feat), cache trong phiên
 
@@ -55,12 +54,12 @@ export function PlayerProvider({ children }) {
   const sameArtistCountRef = useRef(0); // số bài cùng nghệ sĩ đã tự phát nối tiếp kể từ lần người dùng chọn bài / đổi nghệ sĩ
 
   // Chọn bài tự phát tiếp khi hết hàng đợi, theo thứ tự:
-  //  1) bài chưa nghe của CHÍNH nghệ sĩ bài vừa phát (gồm cả bài được feat), tối đa MAX_SAME_ARTIST bài liền nhau,
-  //  2) bài chưa nghe CÙNG THỂ LOẠI của nghệ sĩ khác (bài đó là bài đầu của lượt nghệ sĩ mới, lại được tối đa MAX_SAME_ARTIST bài),
-  //  3) cả 2 đều không có: nếu nghệ sĩ còn bài chưa nghe thì phát tiếp bài của họ, không thì trả null để dừng.
+  //  1) bài khác của CHÍNH nghệ sĩ bài vừa phát (gồm cả bài được feat), tối đa MAX_SAME_ARTIST bài liền nhau,
+  //  2) bài CÙNG THỂ LOẠI của nghệ sĩ khác (bài đó là bài đầu của lượt nghệ sĩ mới, lại được tối đa MAX_SAME_ARTIST bài),
+  //  3) cả 2 đều không có: nếu nghệ sĩ còn bài khác thì phát tiếp bài của họ, không thì trả null để dừng.
   const pickNextSong = async (song) => {
-    const inQueue = new Set(queue.map((x) => String(x.id)));
-    const isFresh = (x) => x && !playedRef.current.has(String(x.id)) && !inQueue.has(String(x.id));
+    // Chỉ loại chính bài đang phát (không xét lịch sử nghe)
+    const isFresh = (x) => x && String(x.id) !== String(song.id);
     // recommender.py bốc ngẫu nhiên trong nhóm nhiều lượt nghe nhất => chọn ngẫu nhiên trong 10 bài đầu
     const pickOne = (list) => list[Math.floor(Math.random() * Math.min(list.length, 10))];
 
@@ -200,7 +199,6 @@ export function PlayerProvider({ children }) {
     if (!currentSong) return;
     const audio = audioRef.current;
     audio.src = currentSong.audioUrl;
-    playedRef.current.add(String(currentSong.id));
     setProgress(0);
     if (isPlaying) {
       audio.play().catch(() => {});
