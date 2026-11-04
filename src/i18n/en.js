@@ -508,7 +508,7 @@ const en = {
         notFound: "Song not found.",
         artists: "Artists",
         recommended: "Recommended songs",
-        sameArtist: "More from this artist",
+        sameArtist: "Related to this artist",
     },
 
     history: {

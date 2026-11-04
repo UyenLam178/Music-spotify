@@ -75,7 +75,12 @@ export default function Song() {
 
   const isCurrent = currentSong?.id === song.id;
 
-  const handlePlay = () => (isCurrent ? togglePlay() : playSong(song));
+  // Nút play lớn: phát bài này rồi nối tiếp các bài gợi ý (không trùng) thay vì dừng sau 1 bài
+  const handlePlay = () => {
+    if (isCurrent) return togglePlay();
+    const queue = [song, ...similar, ...sameArtist].filter((s, i, arr) => arr.findIndex((x) => x.id === s.id) === i);
+    return playSong(song, queue);
+  };
 
   return (
     <div className="song-page">
