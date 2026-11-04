@@ -506,6 +506,9 @@ const vi = {
         plays: "lượt nghe",
         viewDetail: "Xem chi tiết",
         notFound: "Không tìm thấy bài hát này.",
+        artists: "Nghệ sĩ",
+        recommended: "Bài hát đề xuất",
+        sameArtist: "Cùng nghệ sĩ",
     },
 
     history: {

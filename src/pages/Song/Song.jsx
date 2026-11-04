@@ -4,24 +4,26 @@ import { useTranslation } from "react-i18next";
 import { useAuth } from "../../context/AuthContext";
 import { usePlayer } from "../../context/PlayerContext";
 import * as songService from "../../services/songService";
-import { getLyrics, LYRICS_CHANGED_EVENT } from "../../services/lyricsService";
+import * as recommendationService from "../../services/recommendationService";
 import { extractErrorMessage } from "../../services/api";
 import { IconPlay, IconPause, IconHeadphones } from "../../components/Common/Icons";
 import LikeButton from "../../components/Common/LikeButton";
-import LyricsView from "../../components/Music/LyricsView";
+import ArtistCard from "../../components/Music/ArtistCard";
+import SongRow from "../../components/Music/SongRow";
+import SongCard from "../../components/Music/SongCard";
 import Loading from "../../components/Common/Loading";
 import LoginPrompt from "../../components/Common/LoginPrompt";
 import Button from "../../components/Common/Button";
 
 const formatDuration = (sec = 0) => `${Math.floor(sec / 60)}:${String(Math.floor(sec % 60)).padStart(2, "0")}`;
 
-// UC22 — Xem chi tiết bài hát + lời chạy theo nhạc
+// UC22 — Xem chi tiết bài hát: nghệ sĩ (bấm để xem), bài hát đề xuất. Lời bài hát xem ở thanh "Đang phát".
 export default function Song() {
   const { t } = useTranslation();
   const { id } = useParams();
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
-  const { currentSong, isPlaying, progress, playSong, togglePlay, seek } = usePlayer();
+  const { currentSong, isPlaying, playSong, togglePlay } = usePlayer();
   const [state, setState] = useState({ loading: true, song: null, error: "" });
 
   useEffect(() => {
@@ -36,20 +38,28 @@ export default function Song() {
     };
   }, [id, isAuthenticated]);
 
-  const [lyricsEntry, setLyricsEntry] = useState({ id: null, data: null });
-  const lyrics = String(lyricsEntry.id) === String(id) ? lyricsEntry.data : null;
+  // Nghệ sĩ của bài (avatar) + gợi ý bài. Gắn với id bài để không hiện nhầm dữ liệu của bài trước.
+  const [extra, setExtra] = useState({ id: null, artists: [], similar: [], sameArtist: [] });
+  const song = state.song;
   useEffect(() => {
-    if (!isAuthenticated) return undefined;
-    let cancelled = false;
-    const load = () => getLyrics(id).then((l) => !cancelled && setLyricsEntry({ id, data: l }));
-    load();
-    const onChanged = (e) => String(e.detail?.songId) === String(id) && load();
-    window.addEventListener(LYRICS_CHANGED_EVENT, onChanged);
-    return () => {
-      cancelled = true;
-      window.removeEventListener(LYRICS_CHANGED_EVENT, onChanged);
-    };
-  }, [id, isAuthenticated]);
+    if (!isAuthenticated || !song) return undefined;
+    const controller = new AbortController();
+    const ignore = (err) => (err?.code === "ERR_CANCELED" ? null : []);
+    Promise.all([
+      songService.getArtistsOfSong(song).catch(() => []),
+      recommendationService.getSimilarSongs(song.id, 8, controller.signal).catch(ignore),
+      recommendationService.getSameArtistSongs(song.id, 6, controller.signal).catch(ignore),
+    ]).then(([artists, similar, sameArtist]) => {
+      if (similar === null || sameArtist === null || controller.signal.aborted) return;
+      const seen = new Set(similar.map((s) => s.id));
+      setExtra({ id: song.id, artists, similar, sameArtist: sameArtist.filter((s) => !seen.has(s.id)) });
+    });
+    return () => controller.abort();
+  }, [song, isAuthenticated]);
+  const ready = song && extra.id === song.id;
+  const artists = ready ? extra.artists : [];
+  const similar = ready ? extra.similar : [];
+  const sameArtist = ready ? extra.sameArtist : [];
 
   if (!isAuthenticated) return <LoginPrompt />;
   if (state.loading) return <Loading full />;
@@ -63,12 +73,9 @@ export default function Song() {
     );
   }
 
-  const { song } = state;
   const isCurrent = currentSong?.id === song.id;
 
   const handlePlay = () => (isCurrent ? togglePlay() : playSong(song));
-  // Bấm vào 1 dòng lời: đang phát bài này thì tua tới dòng đó, chưa phát thì bắt đầu phát bài
-  const handleSeek = (time) => (isCurrent ? seek(time) : playSong(song));
 
   return (
     <div className="song-page">
@@ -100,22 +107,44 @@ export default function Song() {
         </div>
       </div>
 
-      <section className="song-lyrics-section">
-        <h2>{t("lyrics.title")}</h2>
-        {!lyrics ? (
-          <p className="sb-hint">{t("lyrics.empty")}</p>
-        ) : (
-          <>
-            {!lyrics.synced && <p className="sb-hint">{t("lyrics.notSynced")}</p>}
-            <LyricsView
-              lines={lyrics.lines}
-              synced={lyrics.synced}
-              time={isCurrent ? progress : null}
-              onSeek={handleSeek}
-            />
-          </>
-        )}
-      </section>
+      {artists.length > 0 && (
+        <section className="section song-artists-section">
+          <div className="section-head">
+            <h2>{t("songPage.artists")}</h2>
+          </div>
+          <div className="card-grid">
+            {artists.map((a) => (
+              <ArtistCard key={a.id} artist={a} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {similar.length > 0 && (
+        <section className="section">
+          <div className="section-head">
+            <h2>{t("songPage.recommended")}</h2>
+          </div>
+          <div className="song-list">
+            {similar.map((s, i) => (
+              <SongRow key={s.id} song={s} index={i} songList={similar} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {sameArtist.length > 0 && (
+        <section className="section">
+          <div className="section-head">
+            <h2>{t("songPage.sameArtist")}</h2>
+          </div>
+          <div className="card-grid">
+            {sameArtist.map((s) => (
+              <SongCard key={s.id} song={s} songList={sameArtist} />
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 }

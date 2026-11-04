@@ -506,6 +506,9 @@ const en = {
         plays: "plays",
         viewDetail: "View details",
         notFound: "Song not found.",
+        artists: "Artists",
+        recommended: "Recommended songs",
+        sameArtist: "More from this artist",
     },
 
     history: {

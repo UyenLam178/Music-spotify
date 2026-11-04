@@ -144,6 +144,17 @@ const withAvatars = async (artists) =>
         })
     );
 
+// Nghệ sĩ của 1 bài (chính + feat) kèm ảnh đại diện, dùng cho trang chi tiết bài hát
+export const getArtistsOfSong = async (song) => {
+    if (!song) return [];
+    const list = [];
+    if (song.artistId != null) list.push(toArtist(song.artistId, song.mainArtistName || song.artistName));
+    (song.featuredArtists || []).forEach((a) => {
+        if (a?.id != null && !list.some((x) => String(x.id) === String(a.id))) list.push(toArtist(a.id, a.artistName));
+    });
+    return withAvatars(list);
+};
+
 // Nghệ sĩ (chính + feat) rút ra từ danh sách bài; mặc định xếp theo tổng lượt nghe
 const artistsFromSongs = (songs, nameFilter = null) => {
     const map = new Map();
