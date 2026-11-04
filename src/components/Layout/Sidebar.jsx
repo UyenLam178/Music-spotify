@@ -1,3 +1,4 @@
+import logo from "../../assets/images/Logo.png";
 import { useEffect, useState } from "react";
 import {
   NavLink,
@@ -142,7 +143,7 @@ export default function Sidebar({ open = false, onClose }) {
           }}
       >
         <div className="sb-brand">
-          <span className="sb-logo-dot" />
+          <img src={logo} alt="MySpotify" className="sb-logo-dot" />
 
           <span>
                     MySpotify

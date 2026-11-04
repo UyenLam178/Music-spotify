@@ -1,3 +1,4 @@
+import logo from "../../assets/images/Logo.png";
 import { Link, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import LoginForm from "../../components/Auth/LoginForm";
@@ -12,7 +13,7 @@ export default function Login() {
         <div className="auth-page">
             <div className="auth-card">
                 <div className="sb-brand auth-brand">
-                    <span className="sb-logo-dot" />
+                    <img src={logo} alt="MySpotify" className="sb-logo-dot" />
                     <span>MySpotify</span>
                 </div>
                 <h1 className="auth-title">{t("login.title")}</h1>

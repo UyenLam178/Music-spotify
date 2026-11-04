@@ -1,3 +1,4 @@
+import logo from "../../assets/images/Logo.png";
 import { useState } from "react";
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -78,7 +79,7 @@ export default function ResetPassword() {
     <div className="auth-page">
       <div className="auth-card">
         <div className="sb-brand auth-brand">
-          <span className="sb-logo-dot" />
+          <img src={logo} alt="MySpotify" className="sb-logo-dot" />
           <span>MySpotify</span>
         </div>
         <h1 className="auth-title">{t("resetPassword.title")}</h1>
