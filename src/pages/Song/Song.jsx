@@ -10,15 +10,12 @@ import { IconPlay, IconPause, IconHeadphones } from "../../components/Common/Ico
 import LikeButton from "../../components/Common/LikeButton";
 import ArtistCard from "../../components/Music/ArtistCard";
 import SongRow from "../../components/Music/SongRow";
-import SongCard from "../../components/Music/SongCard";
 import Loading from "../../components/Common/Loading";
 import LoginPrompt from "../../components/Common/LoginPrompt";
 import Button from "../../components/Common/Button";
 
-// Khớp recommender.py: mỗi API gợi ý mặc định top_n = 5.
-// /recommendations/artist: tối đa max_same = 3 bài cùng nghệ sĩ + bù bằng bài nghệ sĩ khác cùng thể loại cho đủ top_n.
-const SIMILAR_LIMIT = 5;
-const ARTIST_LIMIT = 5;
+// Khớp recommender.py: top_n = 5 (backend: tối đa 3 bài cùng nghệ sĩ + bù bài nghệ sĩ khác cùng thể loại).
+const RECOMMEND_LIMIT = 5;
 
 const formatDuration = (sec = 0) => `${Math.floor(sec / 60)}:${String(Math.floor(sec % 60)).padStart(2, "0")}`;
 
@@ -43,31 +40,26 @@ export default function Song() {
     };
   }, [id, isAuthenticated]);
 
-  // Nghệ sĩ của bài (avatar) + gợi ý bài. Gắn với id bài để không hiện nhầm dữ liệu của bài trước.
-  const [extra, setExtra] = useState({ id: null, artists: [], similar: [], sameArtist: [] });
+  // Nghệ sĩ của bài (avatar) + gợi ý bài (theo nghệ sĩ và thể loại). Gắn với id bài để không hiện nhầm dữ liệu của bài trước.
+  const [extra, setExtra] = useState({ id: null, artists: [], recs: [] });
   const song = state.song;
   useEffect(() => {
     if (!isAuthenticated || !song) return undefined;
     const controller = new AbortController();
-    const ignore = (err) => (err?.code === "ERR_CANCELED" ? null : []);
     Promise.all([
       songService.getArtistsOfSong(song).catch(() => []),
-      recommendationService.getSimilarSongs(song.id, SIMILAR_LIMIT, controller.signal).catch(ignore),
-      recommendationService.getSameArtistSongs(song.id, ARTIST_LIMIT, controller.signal).catch(ignore),
-    ]).then(([artists, similar, sameArtist]) => {
-      if (similar === null || sameArtist === null || controller.signal.aborted) return;
-      const seen = new Set(similar.map((s) => s.id));
-      setExtra({ id: song.id, artists, similar, sameArtist: sameArtist.filter((s) => !seen.has(s.id)) });
+      recommendationService.getSimilarSongs(song.id, RECOMMEND_LIMIT, controller.signal).catch((err) =>
+        err?.code === "ERR_CANCELED" ? null : []
+      ),
+    ]).then(([artists, recs]) => {
+      if (recs === null || controller.signal.aborted) return;
+      setExtra({ id: song.id, artists, recs });
     });
     return () => controller.abort();
   }, [song, isAuthenticated]);
   const ready = song && extra.id === song.id;
   const artists = ready ? extra.artists : [];
-  const similar = ready ? extra.similar : [];
-  const artistRelated = ready ? extra.sameArtist : [];
-  // Tách đúng như recommend_artist_db: bài cùng nghệ sĩ trước, phần bù là nghệ sĩ khác cùng thể loại
-  const sameArtist = artistRelated.filter((s) => String(s.artistId) === String(song?.artistId));
-  const sameGenre = artistRelated.filter((s) => String(s.artistId) !== String(song?.artistId));
+  const recs = ready ? extra.recs : [];
 
   if (!isAuthenticated) return <LoginPrompt />;
   if (state.loading) return <Loading full />;
@@ -130,40 +122,14 @@ export default function Song() {
         </section>
       )}
 
-      {similar.length > 0 && (
+      {recs.length > 0 && (
         <section className="section">
           <div className="section-head">
             <h2>{t("songPage.recommended")}</h2>
           </div>
           <div className="song-list">
-            {similar.map((s, i) => (
-              <SongRow key={s.id} song={s} index={i} songList={similar} />
-            ))}
-          </div>
-        </section>
-      )}
-
-      {sameArtist.length > 0 && (
-        <section className="section">
-          <div className="section-head">
-            <h2>{t("songPage.sameArtist")}</h2>
-          </div>
-          <div className="card-grid">
-            {sameArtist.map((s) => (
-              <SongCard key={s.id} song={s} songList={sameArtist} />
-            ))}
-          </div>
-        </section>
-      )}
-
-      {sameGenre.length > 0 && (
-        <section className="section">
-          <div className="section-head">
-            <h2>{t("songPage.sameGenre")}</h2>
-          </div>
-          <div className="card-grid">
-            {sameGenre.map((s) => (
-              <SongCard key={s.id} song={s} songList={sameGenre} />
+            {recs.map((s, i) => (
+              <SongRow key={s.id} song={s} index={i} songList={recs} />
             ))}
           </div>
         </section>
