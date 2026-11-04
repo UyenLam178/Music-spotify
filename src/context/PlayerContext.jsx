@@ -13,6 +13,8 @@ const loadVolume = () => {
   return Number.isFinite(v) ? Math.min(1, Math.max(0, v)) : DEFAULT_VOLUME;
 };
 
+const MAX_SAME_ARTIST = 3; // max_same trong recommender.py
+
 const PlayerContext = createContext(null);
 
 export function PlayerProvider({ children }) {
@@ -48,25 +50,38 @@ export function PlayerProvider({ children }) {
     return artistSongsRef.current.get(key);
   };
 
+  // Khớp recommend_artist_db (recommender.py): sau bài đang nghe chỉ phát tối đa MAX_SAME_ARTIST bài
+  // liên quan của cùng nghệ sĩ; quá giới hạn hoặc nghệ sĩ không đủ bài thì sang nghệ sĩ khác cùng thể loại.
+  const sameArtistCountRef = useRef(0); // số bài cùng nghệ sĩ đã tự phát nối tiếp kể từ lần người dùng chọn bài / đổi nghệ sĩ
+
   // Chọn bài tự phát tiếp khi hết hàng đợi, theo thứ tự:
-  //  1) bài chưa nghe của CHÍNH nghệ sĩ bài vừa phát (gồm cả bài được feat),
-  //  2) bài chưa nghe của các nghệ sĩ HỢP TÁC (feat) trong bài vừa phát,
-  //  3) hết rồi mới chuyển sang 1 bài CÙNG THỂ LOẠI (nghệ sĩ khác); bài đó hết thì lặp lại từ bước 1 với nghệ sĩ của nó.
-  // Không còn bài nào chưa nghe => trả null để trình phát dừng.
+  //  1) bài chưa nghe của CHÍNH nghệ sĩ bài vừa phát (gồm cả bài được feat), tối đa MAX_SAME_ARTIST bài liền nhau,
+  //  2) bài chưa nghe CÙNG THỂ LOẠI của nghệ sĩ khác (bài đó là bài đầu của lượt nghệ sĩ mới, lại được tối đa MAX_SAME_ARTIST bài),
+  //  3) cả 2 đều không có: nếu nghệ sĩ còn bài chưa nghe thì phát tiếp bài của họ, không thì trả null để dừng.
   const pickNextSong = async (song) => {
     const inQueue = new Set(queue.map((x) => String(x.id)));
     const isFresh = (x) => x && !playedRef.current.has(String(x.id)) && !inQueue.has(String(x.id));
+    // recommender.py bốc ngẫu nhiên trong nhóm nhiều lượt nghe nhất => chọn ngẫu nhiên trong 10 bài đầu
+    const pickOne = (list) => list[Math.floor(Math.random() * Math.min(list.length, 10))];
 
-    const artistIds = [song.artistId, ...(song.featuredArtists || []).map((a) => a.id)].filter((id) => id != null);
-    for (const artistId of [...new Set(artistIds.map(String))]) {
-      const fresh = (await fetchArtistSongs(artistId)).filter(isFresh);
-      if (fresh.length) return fresh[0];
+    const sameArtistFresh =
+      song.artistId != null ? (await fetchArtistSongs(song.artistId)).filter(isFresh) : [];
+    if (sameArtistFresh.length && sameArtistCountRef.current < MAX_SAME_ARTIST) {
+      sameArtistCountRef.current += 1;
+      return pickOne(sameArtistFresh);
     }
 
     if (song.genreId != null) {
-      const fresh = (await getSongsByGenres([song.genreId], 10)).filter(isFresh);
-      if (fresh.length) return fresh[0];
+      const others = (await getSongsByGenres([song.genreId], 10)).filter(
+        (x) => isFresh(x) && String(x.artistId) !== String(song.artistId)
+      );
+      if (others.length) {
+        sameArtistCountRef.current = 0; // sang nghệ sĩ mới, tính lại từ đầu
+        return others[0];
+      }
     }
+
+    if (sameArtistFresh.length) return pickOne(sameArtistFresh);
     return null;
   };
 
@@ -213,6 +228,7 @@ export function PlayerProvider({ children }) {
   }, [currentId]);
 
   const playQueue = (songs, startIndex = 0) => {
+    sameArtistCountRef.current = 0; // người dùng tự chọn bài: bắt đầu lượt nghệ sĩ mới
     // Lần đầu bấm phát bài: tự bật panel trên màn hình rộng (điện thoại thì mở bằng nút)
     if (currentIndex < 0 && window.innerWidth > 900) setPanelOpen(true);
     setQueue(songs);
