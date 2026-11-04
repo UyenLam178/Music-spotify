@@ -1,7 +1,8 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { tokenStorage } from "../services/api";
 import { useAuth } from "./AuthContext";
-import { getSongById, recordPlay } from "../services/songService";
+import { getSongById, recordPlay, getArtistById } from "../services/songService";
+import { getSongsByGenres } from "../services/recommendationService";
 import { readJson, writeJson } from "../services/storage";
 
 // Lưu âm lượng người dùng đã chỉnh để lần sau vào web vẫn giữ nguyên
@@ -33,6 +34,61 @@ export function PlayerProvider({ children }) {
 
   const currentSong = currentIndex >= 0 ? queue[currentIndex] : null;
 
+  // Các bài đã phát trong phiên: không phát lại, để tự động phát không quay vòng A -> B -> A -> B
+  const playedRef = useRef(new Set());
+  const loadingRecRef = useRef(false);
+  const artistSongsRef = useRef(new Map()); // artistId -> các bài của nghệ sĩ (chính + feat), cache trong phiên
+
+  const fetchArtistSongs = async (artistId) => {
+    const key = String(artistId);
+    if (!artistSongsRef.current.has(key)) {
+      const artist = await getArtistById(artistId).catch(() => null);
+      artistSongsRef.current.set(key, artist?.topSongs || []);
+    }
+    return artistSongsRef.current.get(key);
+  };
+
+  // Chọn bài tự phát tiếp khi hết hàng đợi, theo thứ tự:
+  //  1) bài chưa nghe của CHÍNH nghệ sĩ bài vừa phát (gồm cả bài được feat),
+  //  2) bài chưa nghe của các nghệ sĩ HỢP TÁC (feat) trong bài vừa phát,
+  //  3) hết rồi mới chuyển sang 1 bài CÙNG THỂ LOẠI (nghệ sĩ khác); bài đó hết thì lặp lại từ bước 1 với nghệ sĩ của nó.
+  // Không còn bài nào chưa nghe => trả null để trình phát dừng.
+  const pickNextSong = async (song) => {
+    const inQueue = new Set(queue.map((x) => String(x.id)));
+    const isFresh = (x) => x && !playedRef.current.has(String(x.id)) && !inQueue.has(String(x.id));
+
+    const artistIds = [song.artistId, ...(song.featuredArtists || []).map((a) => a.id)].filter((id) => id != null);
+    for (const artistId of [...new Set(artistIds.map(String))]) {
+      const fresh = (await fetchArtistSongs(artistId)).filter(isFresh);
+      if (fresh.length) return fresh[0];
+    }
+
+    if (song.genreId != null) {
+      const fresh = (await getSongsByGenres([song.genreId], 10)).filter(isFresh);
+      if (fresh.length) return fresh[0];
+    }
+    return null;
+  };
+
+  const autoplayNext = async () => {
+    if (loadingRecRef.current || !currentSong) return;
+    loadingRecRef.current = true;
+    try {
+      const next = await pickNextSong(currentSong);
+      if (!next) {
+        setIsPlaying(false);
+        return;
+      }
+      setQueue([...queue, next]);
+      setCurrentIndex(queue.length);
+      setIsPlaying(true);
+    } catch {
+      setIsPlaying(false);
+    } finally {
+      loadingRecRef.current = false;
+    }
+  };
+
   const handleNext = (autoAdvance = false) => {
     if (!queue.length) return;
     if (repeatMode === "one" && autoAdvance) {
@@ -48,7 +104,7 @@ export function PlayerProvider({ children }) {
       if (nextIndex >= queue.length) {
         if (repeatMode === "all") nextIndex = 0;
         else {
-          setIsPlaying(false);
+          autoplayNext();
           return;
         }
       }
@@ -129,6 +185,7 @@ export function PlayerProvider({ children }) {
     if (!currentSong) return;
     const audio = audioRef.current;
     audio.src = currentSong.audioUrl;
+    playedRef.current.add(String(currentSong.id));
     setProgress(0);
     if (isPlaying) {
       audio.play().catch(() => {});

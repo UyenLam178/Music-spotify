@@ -83,12 +83,9 @@ export default function Song() {
 
   const isCurrent = currentSong?.id === song.id;
 
-  // Nút play lớn: phát bài này rồi nối tiếp các bài gợi ý (không trùng) thay vì dừng sau 1 bài
-  const handlePlay = () => {
-    if (isCurrent) return togglePlay();
-    const queue = [song, ...similar, ...sameArtist, ...sameGenre].filter((s, i, arr) => arr.findIndex((x) => x.id === s.id) === i);
-    return playSong(song, queue);
-  };
+  // Nút play lớn: chỉ phát bài này. Hết bài, trình phát tự phát bài khác của cùng nghệ sĩ / nghệ sĩ hợp tác,
+  // hết nữa mới chuyển sang bài cùng thể loại (xem PlayerContext).
+  const handlePlay = () => (isCurrent ? togglePlay() : playSong(song));
 
   return (
     <div className="song-page">
