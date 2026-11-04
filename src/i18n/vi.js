@@ -508,7 +508,8 @@ const vi = {
         notFound: "Không tìm thấy bài hát này.",
         artists: "Nghệ sĩ",
         recommended: "Bài hát đề xuất",
-        sameArtist: "Liên quan đến nghệ sĩ",
+        sameArtist: "Cùng nghệ sĩ",
+        sameGenre: "Nghệ sĩ khác cùng thể loại",
     },
 
     history: {

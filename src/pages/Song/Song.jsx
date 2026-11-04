@@ -15,6 +15,11 @@ import Loading from "../../components/Common/Loading";
 import LoginPrompt from "../../components/Common/LoginPrompt";
 import Button from "../../components/Common/Button";
 
+// Khớp recommender.py: mỗi API gợi ý mặc định top_n = 5.
+// /recommendations/artist: tối đa max_same = 3 bài cùng nghệ sĩ + bù bằng bài nghệ sĩ khác cùng thể loại cho đủ top_n.
+const SIMILAR_LIMIT = 5;
+const ARTIST_LIMIT = 5;
+
 const formatDuration = (sec = 0) => `${Math.floor(sec / 60)}:${String(Math.floor(sec % 60)).padStart(2, "0")}`;
 
 // UC22 — Xem chi tiết bài hát: nghệ sĩ (bấm để xem), bài hát đề xuất. Lời bài hát xem ở thanh "Đang phát".
@@ -47,8 +52,8 @@ export default function Song() {
     const ignore = (err) => (err?.code === "ERR_CANCELED" ? null : []);
     Promise.all([
       songService.getArtistsOfSong(song).catch(() => []),
-      recommendationService.getSimilarSongs(song.id, 8, controller.signal).catch(ignore),
-      recommendationService.getSameArtistSongs(song.id, 6, controller.signal).catch(ignore),
+      recommendationService.getSimilarSongs(song.id, SIMILAR_LIMIT, controller.signal).catch(ignore),
+      recommendationService.getSameArtistSongs(song.id, ARTIST_LIMIT, controller.signal).catch(ignore),
     ]).then(([artists, similar, sameArtist]) => {
       if (similar === null || sameArtist === null || controller.signal.aborted) return;
       const seen = new Set(similar.map((s) => s.id));
@@ -59,7 +64,10 @@ export default function Song() {
   const ready = song && extra.id === song.id;
   const artists = ready ? extra.artists : [];
   const similar = ready ? extra.similar : [];
-  const sameArtist = ready ? extra.sameArtist : [];
+  const artistRelated = ready ? extra.sameArtist : [];
+  // Tách đúng như recommend_artist_db: bài cùng nghệ sĩ trước, phần bù là nghệ sĩ khác cùng thể loại
+  const sameArtist = artistRelated.filter((s) => String(s.artistId) === String(song?.artistId));
+  const sameGenre = artistRelated.filter((s) => String(s.artistId) !== String(song?.artistId));
 
   if (!isAuthenticated) return <LoginPrompt />;
   if (state.loading) return <Loading full />;
@@ -78,7 +86,7 @@ export default function Song() {
   // Nút play lớn: phát bài này rồi nối tiếp các bài gợi ý (không trùng) thay vì dừng sau 1 bài
   const handlePlay = () => {
     if (isCurrent) return togglePlay();
-    const queue = [song, ...similar, ...sameArtist].filter((s, i, arr) => arr.findIndex((x) => x.id === s.id) === i);
+    const queue = [song, ...similar, ...sameArtist, ...sameGenre].filter((s, i, arr) => arr.findIndex((x) => x.id === s.id) === i);
     return playSong(song, queue);
   };
 
@@ -146,6 +154,19 @@ export default function Song() {
           <div className="card-grid">
             {sameArtist.map((s) => (
               <SongCard key={s.id} song={s} songList={sameArtist} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {sameGenre.length > 0 && (
+        <section className="section">
+          <div className="section-head">
+            <h2>{t("songPage.sameGenre")}</h2>
+          </div>
+          <div className="card-grid">
+            {sameGenre.map((s) => (
+              <SongCard key={s.id} song={s} songList={sameGenre} />
             ))}
           </div>
         </section>

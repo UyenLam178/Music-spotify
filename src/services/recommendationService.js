@@ -8,6 +8,8 @@ import { toListenerSong } from "./songService";
 //   GET /api/songs/{songId}/recommendations?limit=5          -> bài tương tự
 //   GET /api/songs/{songId}/recommendations/artist?limit=5   -> bài cùng nghệ sĩ
 //   GET /api/recommendations/genres?genreIds=1,24&limit=10   -> bài theo thể loại
+// Khớp recommender.py: top_n mặc định 5; /artist lấy tối đa 3 bài cùng nghệ sĩ + bù bài nghệ sĩ khác cùng thể loại.
+// Kết quả bốc ngẫu nhiên (sample) nên mỗi lần gọi có thể khác nhau => không cache.
 // Cả 3 trả về mảng bài hát cùng dạng với GET /api/songs. Cần đăng nhập (token gắn tự động ở api.js).
 // Gợi ý chỉ là phần phụ: lỗi hoặc rỗng => trả [] để giao diện ẩn mục, không làm vỡ trang.
 // ============================================================================
@@ -22,10 +24,10 @@ const fetchList = async (path, params, signal) => {
     }
 };
 
-export const getSimilarSongs = (songId, limit = 8, signal) =>
+export const getSimilarSongs = (songId, limit = 5, signal) =>
     fetchList(`/songs/${songId}/recommendations`, { limit }, signal);
 
-export const getSameArtistSongs = (songId, limit = 6, signal) =>
+export const getSameArtistSongs = (songId, limit = 5, signal) =>
     fetchList(`/songs/${songId}/recommendations/artist`, { limit }, signal);
 
 export const getSongsByGenres = (genreIds, limit = 10, signal) =>
