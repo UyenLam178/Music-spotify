@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useAuth } from "../../context/AuthContext";
 import * as playlistService from "../../services/playlistService";
 import PlaylistCard from "../../components/Playlist/PlaylistCard";
+import CreatePlaylistModal from "../../components/Playlist/CreatePlaylistModal";
 import Loading from "../../components/Common/Loading";
 import Button from "../../components/Common/Button";
 
@@ -12,7 +13,7 @@ export default function Library() {
     const { isAuthenticated } = useAuth();
     const navigate = useNavigate();
     const [playlists, setPlaylists] = useState(null);
-    const [creating, setCreating] = useState(false);
+    const [createOpen, setCreateOpen] = useState(false);
 
     useEffect(() => {
         if (!isAuthenticated) {
@@ -25,20 +26,9 @@ export default function Library() {
             .catch(() => setPlaylists([]));
     }, [isAuthenticated]);
 
-    const handleCreate = async () => {
-        setCreating(true);
-        try {
-            const playlist = await playlistService.createPlaylist({
-                name: t("library.defaultPlaylistName"),
-                description: "",
-                isPublic: false,
-            });
-            navigate(`/playlist/${playlist.id}`);
-        } catch {
-            // im lặng bỏ qua nếu không tạo được
-        } finally {
-            setCreating(false);
-        }
+    // Backend bắt buộc có tên + ít nhất 1 bài hát => mở form tạo playlist
+    const handleCreated = (playlist) => {
+        if (playlist?.id) navigate(`/playlist/${playlist.id}`);
     };
 
     if (!isAuthenticated) {
@@ -57,7 +47,7 @@ export default function Library() {
         <div>
             <div className="section-head">
                 <h1 style={{ fontSize: 24 }}>{t("library.title")}</h1>
-                <Button size="sm" isLoading={creating} onClick={handleCreate}>
+                <Button size="sm" onClick={() => setCreateOpen(true)}>
                     {t("library.createPlaylist")}
                 </Button>
             </div>
@@ -70,6 +60,11 @@ export default function Library() {
                     ))}
                 </div>
             )}
+            <CreatePlaylistModal
+                isOpen={createOpen}
+                onClose={() => setCreateOpen(false)}
+                onCreated={handleCreated}
+            />
         </div>
     );
 }

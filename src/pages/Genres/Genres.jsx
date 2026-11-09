@@ -6,6 +6,7 @@ import { useAuth } from "../../context/AuthContext";
 import { extractErrorMessage } from "../../services/api";
 import LoginPrompt from "../../components/Common/LoginPrompt";
 import Loading from "../../components/Common/Loading";
+import { getGenreArt } from "../../utils/genreArt";
 
 // Trang Genres: lưới các thể loại lấy từ GET /api/genres. Bấm 1 ô -> /genres/:genreId
 export default function Genres() {
@@ -25,20 +26,43 @@ export default function Genres() {
     };
   }, [isAuthenticated, t]);
 
+  const visible = state.genres;
+
   if (!isAuthenticated) return <LoginPrompt />;
   if (state.loading) return <Loading full />;
 
   return (
-    <div>
-      <h1 style={{ fontSize: 24, marginBottom: 4 }}>{t("genre.pageTitle")}</h1>
-      <p className="sb-hint" style={{ padding: 0, marginBottom: 20 }}>{t("genre.pageSubtitle")}</p>
+    <div className="genres-page">
+      <span className="genres-arcs" aria-hidden="true" />
+
+      <header className="genres-hero">
+        <p className="genres-eyebrow">{t("genre.eyebrow")}</p>
+        <h1>{t("genre.pageTitle")}</h1>
+        <p className="genres-sub">{t("genre.subtitleCount", { count: state.genres.length })}</p>
+      </header>
+
       {state.error && <p className="form-error-banner">{state.error}</p>}
-      <div className="genre-grid">
-        {state.genres.map((g) => (
-          <Link key={g.id} to={`/genres/${g.id}`} className="genre-tile" style={{ background: `#${g.color}` }}>
-            {g.name}
-          </Link>
-        ))}
+
+      <div className="genres-grid">
+        {visible.map((g) => {
+          const art = getGenreArt(g.name);
+          return (
+            <Link
+              key={g.id}
+              to={`/genres/${g.id}`}
+              className="genre-card"
+              aria-label={t("genre.openGenre", { name: g.name })}
+              style={{ "--genre-color": `#${g.color}` }}
+            >
+              <span
+                className="genre-card-art"
+                style={art ? { backgroundImage: `url(${JSON.stringify(art)})` } : undefined}
+                aria-hidden="true"
+              />
+              <span className="genre-card-name">{g.name}</span>
+            </Link>
+          );
+        })}
       </div>
     </div>
   );

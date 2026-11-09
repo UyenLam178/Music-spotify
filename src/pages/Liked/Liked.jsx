@@ -23,28 +23,38 @@ export default function Liked() {
     );
   }
 
+  const title = t("common.likedSongs");
+  const totalMinutes = Math.round(likedSongs.reduce((sum, x) => sum + (x.duration || 0), 0) / 60);
+
   return (
-    <div>
-      <div className="genre-hero" style={{ background: "linear-gradient(180deg, #1db954 0%, transparent 100%)" }}>
-        <h1>{t("common.likedSongs")}</h1>
-        <p>{t("liked.count", { count: likedSongs.length })}</p>
-      </div>
+    <div className="liked-page">
+      <span className="genres-arcs" aria-hidden="true" />
+
+      <header className="liked-hero">
+        <h1>
+          {title.slice(0, title.lastIndexOf(" ") + 1)}
+          <span>{title.slice(title.lastIndexOf(" ") + 1)}</span>
+        </h1>
+        <div className="liked-meta">
+          <span>{t("liked.count", { count: likedSongs.length })}</span>
+          {totalMinutes > 0 && <span>{t("playlist.approxMinutes", { count: totalMinutes })}</span>}
+        </div>
+        {likedSongs.length > 0 && (
+          <button type="button" className="liked-play-btn" onClick={() => playQueue(likedSongs, 0)}>
+            <IconPlay />
+            {t("genre.playAll")}
+          </button>
+        )}
+      </header>
 
       {likedSongs.length === 0 ? (
-        <p className="sb-hint">{t("liked.empty")}</p>
+        <p className="liked-empty">{t("liked.empty")}</p>
       ) : (
-        <>
-          <div style={{ margin: "16px 0" }}>
-            <Button onClick={() => playQueue(likedSongs, 0)}>
-              <IconPlay /> {t("genre.playAll")}
-            </Button>
-          </div>
-          <div className="song-list">
-            {likedSongs.map((song, i) => (
-              <SongRow key={song.id} song={song} index={i} showPlays songList={likedSongs} />
-            ))}
-          </div>
-        </>
+        <div className="song-list">
+          {likedSongs.map((song, i) => (
+            <SongRow key={song.id} song={song} index={i} showPlays songList={likedSongs} />
+          ))}
+        </div>
       )}
     </div>
   );

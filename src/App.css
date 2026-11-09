@@ -2168,3 +2168,609 @@ body.np-resizing {
     gap: 10px;
   }
 }
+
+
+/* ======================================================================
+   Trang Thể loại (Genres) — phong cách Spotify hiện đại, nền tối
+   Lưới 5 cột, thẻ nhỏ gọn, ảnh nền nghệ thuật (không icon).
+   Responsive theo bề rộng khung nội dung (container query) nên vẫn đúng
+   khi có / không có thanh "Đang phát" bên phải.
+   ====================================================================== */
+.genres-page {
+  position: relative;
+  container-type: inline-size;
+  container-name: genres;
+  isolation: isolate;
+  --genres-gap: 16px;
+}
+/* Vòng cung xanh Spotify trang trí góc trên bên phải */
+.genres-arcs {
+  position: absolute;
+  top: -24px;
+  right: -32px;
+  width: min(560px, 62%);
+  aspect-ratio: 1.3;
+  z-index: -1;
+  pointer-events: none;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(200deg, #000 30%, transparent 78%), linear-gradient(180deg, #000 45%, transparent 95%);
+  mask-image: linear-gradient(200deg, #000 30%, transparent 78%), linear-gradient(180deg, #000 45%, transparent 95%);
+  -webkit-mask-composite: source-in;
+  mask-composite: intersect;
+}
+.genres-arcs::before,
+.genres-arcs::after {
+  content: "";
+  position: absolute;
+  border-radius: 50%;
+}
+.genres-arcs::before {
+  width: 150%;
+  aspect-ratio: 1;
+  right: -62%;
+  top: -88%;
+  background:
+    radial-gradient(circle at 50% 50%, transparent 56%, rgba(29, 185, 84, 0.10) 57%, rgba(29, 185, 84, 0.34) 70%, transparent 71%),
+    radial-gradient(circle at 50% 50%, transparent 40%, rgba(29, 185, 84, 0.08) 41%, rgba(29, 185, 84, 0.22) 52%, transparent 53%);
+}
+.genres-arcs::after {
+  width: 92%;
+  aspect-ratio: 1;
+  right: -30%;
+  top: -4%;
+  background: radial-gradient(circle at 50% 50%, transparent 58%, rgba(30, 215, 96, 0.16) 59%, rgba(30, 215, 96, 0.62) 74%, transparent 75%);
+}
+
+.genres-search {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: min(420px, 100%);
+  padding: 0 16px;
+  height: 48px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+}
+.genres-search:hover {
+  background: rgba(255, 255, 255, 0.09);
+}
+.genres-search:focus-within {
+  border-color: rgba(30, 215, 96, 0.7);
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 0 0 3px rgba(30, 215, 96, 0.15);
+}
+.genres-search-icon {
+  width: 20px;
+  height: 20px;
+  flex: none;
+  color: var(--color-text);
+}
+.genres-search input {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-size: 15px;
+  color: var(--color-text);
+}
+.genres-search input::placeholder {
+  color: var(--color-text-subdued);
+}
+.genres-search-clear {
+  display: inline-flex;
+  color: var(--color-text-subdued);
+}
+.genres-search-clear:hover {
+  color: var(--color-text);
+}
+.genres-search-clear svg {
+  width: 16px;
+  height: 16px;
+}
+
+.genres-hero {
+  margin: 8px 0 28px;
+}
+.genres-eyebrow {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--color-text-subdued);
+  margin-bottom: 8px;
+}
+.genres-hero h1 {
+  font-size: clamp(40px, 7cqw, 68px);
+  line-height: 1.05;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.genres-sub {
+  margin-top: 10px;
+  max-width: 60ch;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--color-text-subdued);
+}
+.genres-empty {
+  padding: 0;
+  margin-bottom: 16px;
+}
+
+.genres-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: var(--genres-gap);
+}
+.genre-card {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  height: clamp(76px, 8.6cqw, 96px);
+  padding: 0 clamp(14px, 2.2cqw, 20px);
+  border-radius: 16px;
+  overflow: hidden;
+  background: var(--genre-color, #535353);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.genre-card-art {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  transition: transform 0.45s ease, filter 0.25s ease;
+}
+/* Lớp phủ tối nhẹ phía bên trái để chữ luôn dễ đọc trên mọi ảnh nền */
+.genre-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0.42) 0%, rgba(0, 0, 0, 0.12) 55%, rgba(0, 0, 0, 0) 100%);
+}
+/* Viền sáng tinh tế khi hover */
+.genre-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+  transition: box-shadow 0.25s ease;
+  pointer-events: none;
+}
+.genre-card-name {
+  position: relative;
+  z-index: 2;
+  font-size: clamp(16px, 2.3cqw, 20px);
+  font-weight: 700;
+  line-height: 1.2;
+  color: #fff;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.55);
+  overflow-wrap: anywhere;
+}
+.genre-card:hover,
+.genre-card:focus-visible {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.5);
+}
+.genre-card:hover .genre-card-art,
+.genre-card:focus-visible .genre-card-art {
+  transform: scale(1.07);
+  filter: brightness(1.12) saturate(1.1);
+}
+.genre-card:hover::after,
+.genre-card:focus-visible::after {
+  box-shadow: inset 0 0 0 2px rgba(30, 215, 96, 0.75);
+}
+.genre-card:focus-visible {
+  outline: none;
+}
+.genre-card:active {
+  transform: translateY(-1px) scale(0.99);
+}
+
+@container genres (max-width: 880px) {
+  .genres-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+@container genres (max-width: 660px) {
+  .genres-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@container genres (max-width: 460px) {
+  .genres-page {
+    --genres-gap: 12px;
+  }
+  .genres-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .genres-hero {
+    margin: 28px 0 20px;
+  }
+  .genres-eyebrow {
+    letter-spacing: 0.24em;
+  }
+}
+@container genres (max-width: 300px) {
+  .genres-grid {
+    grid-template-columns: 1fr;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .genre-card,
+  .genre-card-art {
+    transition: none;
+  }
+  .genre-card:hover,
+  .genre-card:hover .genre-card-art {
+    transform: none;
+  }
+}
+
+/* ======================================================================
+   Playlist: form tạo, chọn bài, sửa ảnh bìa
+   ====================================================================== */
+.pl-create-form .form-error-banner,
+.pl-create-form .field {
+  margin-bottom: 12px;
+}
+.pl-create-top {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  margin-bottom: 4px;
+}
+.pl-create-fields {
+  flex: 1;
+  min-width: 0;
+}
+.pl-cover-pick {
+  position: relative;
+  flex: none;
+  width: 132px;
+  height: 132px;
+  border-radius: var(--radius-md);
+  background: var(--color-bg-highlight);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  cursor: pointer;
+  font-size: 40px;
+  color: var(--color-text-subdued);
+}
+.pl-cover-pick img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.pl-cover-pick em {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 6px;
+  font-size: 12px;
+  font-style: normal;
+  text-align: center;
+  color: #fff;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.75));
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.pl-cover-pick:hover em,
+.pl-cover-pick:focus-within em {
+  opacity: 1;
+}
+.pl-public-check {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 16px;
+  font-size: 13px;
+}
+.pl-pick-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.pl-pick-head h3 {
+  font-size: 15px;
+}
+.pl-pick-head .sb-hint {
+  padding: 0;
+}
+.pl-pick-search {
+  width: 100%;
+  padding: 10px 14px;
+  margin-bottom: 8px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  background: var(--color-bg-highlight);
+  outline: none;
+  font-size: 14px;
+}
+.pl-pick-search:focus {
+  border-color: var(--color-green);
+}
+.pl-pick-songs {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 260px;
+  overflow-y: auto;
+  margin-bottom: 16px;
+  padding-right: 4px;
+}
+.pl-pick-song {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 8px;
+  border-radius: var(--radius-sm);
+  text-align: left;
+}
+.pl-pick-song:hover {
+  background: var(--color-bg-highlight);
+}
+.pl-pick-song.on {
+  background: rgba(29, 185, 84, 0.14);
+}
+.pl-pick-song img {
+  width: 40px;
+  height: 40px;
+  border-radius: 4px;
+  object-fit: cover;
+  flex: none;
+}
+.pl-pick-song-meta {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+.pl-pick-song-meta strong,
+.pl-pick-song-meta small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pl-pick-song-meta strong {
+  font-size: 14px;
+}
+.pl-pick-song-meta small {
+  font-size: 12px;
+  color: var(--color-text-subdued);
+}
+.pl-pick-song-check {
+  width: 20px;
+  height: 20px;
+  flex: none;
+  color: var(--color-green);
+  display: inline-flex;
+}
+.pl-edit-cover {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  margin-bottom: 16px;
+}
+.pl-edit-cover-img {
+  width: 96px;
+  height: 96px;
+  flex: none;
+  border-radius: var(--radius-md);
+  background: var(--color-bg-highlight);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  font-size: 32px;
+  color: var(--color-text-subdued);
+}
+.pl-edit-cover-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.pl-edit-cover-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.pl-edit-cover-actions .sb-hint {
+  flex-basis: 100%;
+  padding: 0;
+}
+.btn.disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+.pl-delete-btn {
+  margin-top: 8px;
+  color: #ff6b6b;
+}
+.song-row-remove {
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+.song-row:hover .song-row-remove,
+.song-row-remove:focus-visible {
+  opacity: 1;
+}
+@media (hover: none) {
+  .song-row-remove {
+    opacity: 1;
+  }
+}
+.song-row-actions {
+  min-width: 0;
+}
+@media (max-width: 520px) {
+  .pl-create-top {
+    flex-direction: column;
+  }
+  .pl-cover-pick {
+    width: 100%;
+    height: 150px;
+  }
+}
+
+/* ---------------- Bài hát đã thích: banner chữ, có vòng cung xanh ---------------- */
+.liked-page {
+  position: relative;
+  isolation: isolate;
+  container-type: inline-size;
+}
+.liked-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 14px;
+  padding: clamp(20px, 5cqw, 48px) 0 clamp(20px, 4cqw, 36px);
+}
+.liked-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-green-hover);
+  background: rgba(29, 185, 84, 0.12);
+  border: 1px solid rgba(29, 185, 84, 0.3);
+}
+.liked-chip i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--color-green);
+  box-shadow: 0 0 10px var(--color-green);
+}
+.liked-hero h1 {
+  font-size: clamp(30px, 5.2cqw, 54px);
+  line-height: 1.05;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  overflow-wrap: anywhere;
+  color: #fff;
+}
+.liked-hero h1 span {
+  color: var(--color-green);
+}
+.liked-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 10px;
+  font-size: 14px;
+  color: var(--color-text-subdued);
+}
+.liked-meta span + span::before {
+  content: "•";
+  margin-right: 10px;
+  opacity: 0.6;
+}
+.liked-play-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 6px;
+  padding: 12px 26px 12px 20px;
+  border-radius: 999px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #000;
+  background: var(--color-green);
+  box-shadow: 0 8px 24px rgba(29, 185, 84, 0.3);
+  transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+}
+.liked-play-btn:hover {
+  background: var(--color-green-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px rgba(29, 185, 84, 0.4);
+}
+.liked-play-btn svg {
+  width: 20px;
+  height: 20px;
+}
+.liked-empty {
+  padding: 22px 24px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-bg-highlight);
+  background: var(--color-bg-elevated);
+  color: var(--color-text-subdued);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* ---------------- Banner của 1 thể loại (dùng ảnh nền của thể loại đó) ---------------- */
+.genre-banner {
+  position: relative;
+  container-type: inline-size;
+  display: flex;
+  align-items: center;
+  min-height: clamp(190px, 22vw, 240px);
+  border-radius: 20px;
+  overflow: hidden;
+  background: var(--genre-color, #535353);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.45);
+}
+.genre-banner-art {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+}
+/* Phủ tối phía trái + phía dưới để chữ dễ đọc, vẫn lộ rõ hình ở bên phải */
+.genre-banner::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background:
+    linear-gradient(90deg, rgba(0, 0, 0, 0.62) 0%, rgba(0, 0, 0, 0.3) 45%, rgba(0, 0, 0, 0) 80%),
+    linear-gradient(0deg, rgba(18, 18, 18, 0.55) 0%, rgba(18, 18, 18, 0) 45%);
+}
+.genre-banner-body {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  padding: clamp(20px, 4cqw, 40px);
+  min-width: 0;
+}
+.genre-banner-body h1 {
+  font-size: clamp(40px, 8cqw, 84px);
+  line-height: 1.02;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.45);
+  overflow-wrap: anywhere;
+}
+.genre-banner-meta {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.85);
+}
+.genre-banner .liked-chip {
+  color: #fff;
+  background: rgba(0, 0, 0, 0.35);
+  border-color: rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(6px);
+}

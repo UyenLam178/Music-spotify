@@ -23,6 +23,7 @@ export default function PlaylistHeader({ playlist, songCount = 0, totalDuration 
           <p className="playlist-header-desc">{playlist.description}</p>
         )}
         <div className="playlist-header-stats">
+          {playlist.ownerName && <span>{t("playlist.by", { name: playlist.ownerName })} · </span>}
           <span>{songCount} {t("album.songsCount")}</span>
           {totalMinutes > 0 && <span> · {t("playlist.approxMinutes", { count: totalMinutes })}</span>}
         </div>

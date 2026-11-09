@@ -9,6 +9,10 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [react()],
+    build: {
+      // Ảnh nền thể loại giữ thành file riêng (trình duyệt cache được), không nhúng vào JS
+      assetsInlineLimit: (file) => (file.includes('/assets/genres/') ? false : undefined),
+    },
     server: {
       // Các request "/api/..." được Vite chuyển tiếp sang máy chủ (tránh lỗi CORS khi dev).
       proxy: {

@@ -11,6 +11,7 @@ import SongRow from "../../components/Music/SongRow";
 import Loading from "../../components/Common/Loading";
 import Button from "../../components/Common/Button";
 import { IconPlay } from "../../components/Common/Icons";
+import { getGenreArt } from "../../utils/genreArt";
 
 const PAGE_SIZE = 20;
 
@@ -61,13 +62,27 @@ export default function Genre() {
     window.scrollTo?.({ top: 0 });
   };
 
+  const artUrl = getGenreArt(genre.name);
+
   return (
     <div>
-      <div className="genre-hero" style={{ background: `linear-gradient(180deg, #${genre.color} 0%, transparent 100%)` }}>
-        <span className="sb-section-label" style={{ padding: 0 }}>{t("search.genres")}</span>
-        <h1>{genre.name}</h1>
-        <p>{t("genre.songCount", { count: result?.totalElements ?? 0 })}</p>
-      </div>
+      <header className="genre-banner" style={{ "--genre-color": `#${genre.color}` }}>
+        <span
+          className="genre-banner-art"
+          style={artUrl ? { backgroundImage: `url(${JSON.stringify(artUrl)})` } : undefined}
+          aria-hidden="true"
+        />
+        <div className="genre-banner-body">
+          <h1>{genre.name}</h1>
+          <p className="genre-banner-meta">{t("genre.songCount", { count: result?.totalElements ?? 0 })}</p>
+          {songs.length > 0 && (
+            <button type="button" className="liked-play-btn" onClick={() => playQueue(songs, 0)}>
+              <IconPlay />
+              {t("genre.playAll")}
+            </button>
+          )}
+        </div>
+      </header>
 
       {error && <p className="form-error-banner">{error}</p>}
 
@@ -76,11 +91,7 @@ export default function Genre() {
       ) : (
         songs.length > 0 && (
           <>
-            <div style={{ margin: "16px 0" }}>
-              <Button onClick={() => playQueue(songs, 0)}>
-                <IconPlay /> {t("genre.playAll")}
-              </Button>
-            </div>
+            <div style={{ height: 24 }} />
             <div className="song-list">
               {songs.map((song, i) => (
                 <SongRow key={song.id} song={song} index={page * PAGE_SIZE + i} showPlays songList={songs} />

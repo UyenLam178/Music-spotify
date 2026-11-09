@@ -12,7 +12,7 @@ const formatDuration = (sec = 0) => {
   return `${m}:${s}`;
 };
 
-export default function SongRow({ song, index, songList, onAddToPlaylist, showPlays = false, playedAt = null }) {
+export default function SongRow({ song, index, songList, onAddToPlaylist, onRemove, showPlays = false, playedAt = null }) {
   const { t } = useTranslation();
   const { currentSong, isPlaying, playSong, togglePlay, setPanelOpen } = usePlayer();
   const navigate = useNavigate();
@@ -75,6 +75,16 @@ export default function SongRow({ song, index, songList, onAddToPlaylist, showPl
       <div className="song-row-actions">
         <LikeButton song={song} />
         <span className="song-row-duration">{formatDuration(song.duration)}</span>
+        {onRemove && (
+          <button
+            className="btn-icon song-row-remove"
+            aria-label={t("playlist.removeSong")}
+            title={t("playlist.removeSong")}
+            onClick={() => onRemove(song)}
+          >
+            ✕
+          </button>
+        )}
         {onAddToPlaylist && (
           <button
             className="btn-icon"

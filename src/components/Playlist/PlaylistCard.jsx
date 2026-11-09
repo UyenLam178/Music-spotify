@@ -25,7 +25,10 @@ export default function PlaylistCard({ playlist }) {
         {playlist.name}
       </p>
       <p className="media-card-sub">
-        {playlist.description || `Playlist${playlist.isPublic ? "" : ` · ${t("playlist.private")}`}`}
+        {[
+          typeof playlist.songCount === "number" ? t("playlist.songsCount", { count: playlist.songCount }) : null,
+          playlist.isPublic ? null : t("playlist.private"),
+        ].filter(Boolean).join(" · ") || "Playlist"}
       </p>
     </div>
   );

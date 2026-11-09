@@ -20,8 +20,11 @@ export default function Playlist() {
     const [playlist, setPlaylist] = useState(null);
     const [error, setError] = useState("");
     const [editOpen, setEditOpen] = useState(false);
-    const [editForm, setEditForm] = useState({ name: "", description: "", isPublic: true, coverImageUrl: "" });
+    const [editForm, setEditForm] = useState({ name: "", description: "", isPublic: true });
     const [saving, setSaving] = useState(false);
+    const [editError, setEditError] = useState("");
+    const [coverBusy, setCoverBusy] = useState(false);
+    const [actionError, setActionError] = useState("");
 
     const load = () => {
         setError("");
@@ -34,7 +37,6 @@ export default function Playlist() {
                     name: data.name || "",
                     description: data.description || "",
                     isPublic: data.isPublic ?? true,
-                    coverImageUrl: data.coverImageUrl || "",
                 });
             })
             .catch((err) => setError(extractErrorMessage(err, t("playlist.loadFailedDefault"))));
@@ -58,23 +60,75 @@ export default function Playlist() {
 
     const songs = playlist.songs || [];
     const totalDuration = songs.reduce((sum, s) => sum + (s.duration || 0), 0);
-    const isOwner = user && playlist.ownerId && user.id === playlist.ownerId;
+    // Backend trả sẵn isOwner; dự phòng so sánh id người dùng
+    const isOwner = playlist.isOwner ?? !!(user && playlist.ownerId && user.id === playlist.ownerId);
 
     const handlePlayAll = () => {
         if (songs.length) playQueue(songs, 0);
     };
 
+    // Các API sửa trả về bản playlist mới (kèm danh sách bài) => cập nhật luôn
+    const applyUpdated = (updated) => setPlaylist((prev) => ({ ...prev, ...updated }));
+
     const handleSaveEdit = async (e) => {
         e.preventDefault();
+        if (!editForm.name.trim()) return setEditError(t("playlist.nameRequired"));
         setSaving(true);
+        setEditError("");
         try {
-            const updated = await playlistService.updatePlaylist(id, editForm);
-            setPlaylist((prev) => ({ ...prev, ...updated }));
+            applyUpdated(await playlistService.updatePlaylist(id, { ...editForm, name: editForm.name.trim() }));
             setEditOpen(false);
         } catch (err) {
-            setError(extractErrorMessage(err, t("playlist.updateFailedDefault")));
+            setEditError(extractErrorMessage(err, t("playlist.updateFailedDefault")));
         } finally {
             setSaving(false);
+        }
+    };
+
+    const handleCoverPick = async (e) => {
+        const file = e.target.files?.[0];
+        e.target.value = "";
+        if (!file) return;
+        if (!playlistService.COVER_TYPES.includes(file.type)) return setEditError(t("playlist.coverInvalid"));
+        if (file.size > playlistService.MAX_COVER_BYTES) return setEditError(t("playlist.coverTooBig"));
+        setCoverBusy(true);
+        setEditError("");
+        try {
+            applyUpdated(await playlistService.updatePlaylistCover(id, file));
+        } catch (err) {
+            setEditError(extractErrorMessage(err, t("playlist.updateFailedDefault")));
+        } finally {
+            setCoverBusy(false);
+        }
+    };
+
+    const handleCoverRemove = async () => {
+        setCoverBusy(true);
+        setEditError("");
+        try {
+            applyUpdated(await playlistService.removePlaylistCover(id));
+        } catch (err) {
+            setEditError(extractErrorMessage(err, t("playlist.updateFailedDefault")));
+        } finally {
+            setCoverBusy(false);
+        }
+    };
+
+    const handleRemoveSong = async (song) => {
+        try {
+            applyUpdated(await playlistService.removeSongFromPlaylist(id, song.id));
+        } catch (err) {
+            setActionError(extractErrorMessage(err, t("playlist.removeSongFailed")));
+        }
+    };
+
+    const handleDelete = async () => {
+        if (!window.confirm(t("playlist.deleteConfirm"))) return;
+        try {
+            await playlistService.deletePlaylist(id);
+            navigate("/library");
+        } catch (err) {
+            setEditError(extractErrorMessage(err, t("playlist.deleteFailed")));
         }
     };
 
@@ -85,8 +139,10 @@ export default function Playlist() {
                 songCount={songs.length}
                 totalDuration={totalDuration}
                 onPlay={handlePlayAll}
-                onEdit={isOwner ? () => setEditOpen(true) : undefined}
+                onEdit={isOwner ? () => { setEditError(""); setEditOpen(true); } : undefined}
             />
+
+            {actionError && <p className="form-error-banner" style={{ marginTop: 16 }}>{actionError}</p>}
 
             {songs.length === 0 ? (
                 <p className="sb-hint" style={{ marginTop: 24 }}>
@@ -101,13 +157,44 @@ export default function Playlist() {
                         <span></span>
                     </div>
                     {songs.map((song, i) => (
-                        <SongRow key={song.id} song={song} index={i} showPlays songList={songs} />
+                        <SongRow
+                            key={song.id}
+                            song={song}
+                            index={i}
+                            showPlays
+                            songList={songs}
+                            onRemove={isOwner ? handleRemoveSong : undefined}
+                        />
                     ))}
                 </div>
             )}
 
             <Modal isOpen={editOpen} onClose={() => setEditOpen(false)} title={t("playlist.editDetails")}>
                 <form onSubmit={handleSaveEdit}>
+                    {editError && <div className="form-error-banner">{editError}</div>}
+                    <div className="pl-edit-cover">
+                        <div className="pl-edit-cover-img">
+                            {playlist.coverImageUrl ? <img src={playlist.coverImageUrl} alt="" /> : <span>♪</span>}
+                        </div>
+                        <div className="pl-edit-cover-actions">
+                            <label className={`btn btn-outline btn-sm${coverBusy ? " disabled" : ""}`}>
+                                {playlist.coverImageUrl ? t("playlist.coverChange") : t("playlist.coverChoose")}
+                                <input
+                                    type="file"
+                                    accept="image/jpeg,image/png,image/webp"
+                                    hidden
+                                    disabled={coverBusy}
+                                    onChange={handleCoverPick}
+                                />
+                            </label>
+                            {playlist.hasCustomCover && (
+                                <Button variant="ghost" size="sm" disabled={coverBusy} onClick={handleCoverRemove}>
+                                    {t("playlist.coverRemove")}
+                                </Button>
+                            )}
+                            <small className="sb-hint">{t("playlist.coverLabel")}</small>
+                        </div>
+                    </div>
                     <div className="field">
                         <label>{t("playlist.nameLabel")}</label>
                         <input
@@ -123,13 +210,6 @@ export default function Playlist() {
                             onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
                         />
                     </div>
-                    <div className="field">
-                        <label>{t("playlist.coverUrlLabel")}</label>
-                        <input
-                            value={editForm.coverImageUrl}
-                            onChange={(e) => setEditForm({ ...editForm, coverImageUrl: e.target.value })}
-                        />
-                    </div>
                     <label style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 16, fontSize: 13 }}>
                         <input
                             type="checkbox"
@@ -140,6 +220,9 @@ export default function Playlist() {
                     </label>
                     <Button type="submit" isLoading={saving} className="auth-submit">
                         {t("playlist.saveChanges")}
+                    </Button>
+                    <Button variant="ghost" className="auth-submit pl-delete-btn" onClick={handleDelete}>
+                        {t("playlist.delete")}
                     </Button>
                 </form>
             </Modal>

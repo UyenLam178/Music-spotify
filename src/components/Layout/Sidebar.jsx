@@ -23,6 +23,7 @@ import { Role } from "../../utils/enums";
 
 import * as playlistService
   from "../../services/playlistService";
+import CreatePlaylistModal from "../Playlist/CreatePlaylistModal";
 
 export default function Sidebar({ open = false, onClose }) {
   const { t } = useTranslation();
@@ -40,7 +41,7 @@ export default function Sidebar({ open = false, onClose }) {
   const [playlists, setPlaylists] =
       useState([]);
 
-  const [creating, setCreating] =
+  const [createOpen, setCreateOpen] =
       useState(false);
 
   useEffect(() => {
@@ -48,33 +49,28 @@ export default function Sidebar({ open = false, onClose }) {
 
     if (!isAuthenticated) {
       setPlaylists([]);
-      return;
+      return undefined;
     }
 
-    playlistService
+    const load = () =>
+      playlistService
         .getMyPlaylists()
         .then((data) => {
           if (cancelled) return;
-
-          const list = Array.isArray(data)
-              ? data
-              : data?.content || [];
-
-          setPlaylists(list);
+          setPlaylists(Array.isArray(data) ? data : data?.content || []);
         })
         .catch((error) => {
-          console.error(
-              "Không lấy được playlist:",
-              error
-          );
-
-          if (!cancelled) {
-            setPlaylists([]);
-          }
+          console.error("Không lấy được playlist:", error);
+          if (!cancelled) setPlaylists([]);
         });
+
+    load();
+    // Tải lại khi playlist được tạo / sửa / xóa / thêm bài ở nơi khác
+    window.addEventListener(playlistService.PLAYLISTS_CHANGED, load);
 
     return () => {
       cancelled = true;
+      window.removeEventListener(playlistService.PLAYLISTS_CHANGED, load);
     };
   }, [isAuthenticated]);
 
@@ -87,53 +83,22 @@ export default function Sidebar({ open = false, onClose }) {
               : ""
       }`;
 
-  const handleCreatePlaylist =
-      async () => {
-        if (!isAuthenticated) {
-          navigate("/login");
-          return;
-        }
+  // Backend bắt buộc playlist có tên + ít nhất 1 bài => mở form tạo thay vì tạo playlist rỗng
+  const handleCreatePlaylist = () => {
+    if (!isAuthenticated) {
+      navigate("/login");
+      return;
+    }
+    setCreateOpen(true);
+  };
 
-        if (creating) return;
-
-        setCreating(true);
-
-        try {
-          const playlist =
-              await playlistService.createPlaylist(
-                  {
-                    name:
-                        t(
-                            "playlist.newPlaylist"
-                        ),
-                    description: "",
-                    isPublic: false,
-                  }
-              );
-
-          if (playlist) {
-            setPlaylists((prev) => [
-              playlist,
-              ...prev,
-            ]);
-
-            if (playlist.id) {
-              navigate(
-                  `/playlist/${playlist.id}`
-              );
-            }
-          }
-        } catch (error) {
-          console.error(
-              "Không tạo được playlist:",
-              error
-          );
-        } finally {
-          setCreating(false);
-        }
-      };
+  const handleCreated = (playlist) => {
+    if (!playlist) return;
+    if (playlist.id) navigate(`/playlist/${playlist.id}`);
+  };
 
   return (
+      <>
       <aside
           className={`sidebar${open ? " open" : ""}`}
           onClick={(e) => {
@@ -250,7 +215,6 @@ export default function Sidebar({ open = false, onClose }) {
                 onClick={
                   handleCreatePlaylist
                 }
-                disabled={creating}
             >
               <IconPlus />
             </button>
@@ -325,5 +289,11 @@ export default function Sidebar({ open = false, onClose }) {
 
         <LanguageSwitcher />
       </aside>
+      <CreatePlaylistModal
+          isOpen={createOpen}
+          onClose={() => setCreateOpen(false)}
+          onCreated={handleCreated}
+      />
+      </>
   );
 }
