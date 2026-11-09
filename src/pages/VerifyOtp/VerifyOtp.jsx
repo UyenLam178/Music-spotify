@@ -1,3 +1,4 @@
+import logo from "../../assets/images/Logo.png";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import VerifyOtpForm from "../../components/Auth/VerifyOtpForm";
@@ -8,7 +9,7 @@ export default function VerifyOtp() {
     <div className="auth-page">
       <div className="auth-card">
         <div className="sb-brand auth-brand">
-          <span className="sb-logo-dot" />
+          <img src={logo} alt="MySpotify" className="sb-logo-dot" />
           <span>MySpotify</span>
         </div>
         <h1 className="auth-title">{t("otp.titleRegister")}</h1>
