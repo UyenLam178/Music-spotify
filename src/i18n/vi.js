@@ -204,6 +204,7 @@ const vi = {
 
     profile: {
         label: "Hồ sơ",
+        playlistsTitle: "Playlist công khai",
         defaultName: "Người dùng",
         personalInfo: "Thông tin cá nhân",
         usernameLabel: "Tên đăng nhập",
@@ -325,6 +326,7 @@ const vi = {
         topSongs: "Bài hát nổi bật",
         noSongs: "Nghệ sĩ này chưa có bài hát nào được phát hành.",
         notFound: "Không tìm thấy nghệ sĩ này.",
+        noPlaylists: "Nghệ sĩ này chưa có playlist công khai nào.",
     },
 
     album: {

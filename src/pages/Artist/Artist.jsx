@@ -9,6 +9,7 @@ import LoginPrompt from "../../components/Common/LoginPrompt";
 import { useAuth } from "../../context/AuthContext";
 import { extractErrorMessage } from "../../services/api";
 import { IconPlay } from "../../components/Common/Icons";
+import PublicPlaylistsSection from "../../components/Profile/PublicPlaylistsSection";
 
 export default function Artist() {
     const { t } = useTranslation();
@@ -84,6 +85,9 @@ export default function Artist() {
                     </div>
                 </section>
             )}
+
+            {/* Playlist công khai của nghệ sĩ (chỉ những playlist nghệ sĩ đã để công khai) */}
+            <PublicPlaylistsSection userId={artist.id} variant="page" />
         </div>
     );
 }

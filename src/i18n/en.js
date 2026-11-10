@@ -204,6 +204,7 @@ const en = {
 
     profile: {
         label: "Profile",
+        playlistsTitle: "Public playlists",
         defaultName: "User",
         personalInfo: "Personal information",
         usernameLabel: "Username",
@@ -325,6 +326,7 @@ const en = {
         noSongs: "This artist has no released songs yet.",
         notFound: "Artist not found.",
         topSongs: "Top songs",
+        noPlaylists: "This artist has no public playlists yet.",
     },
 
     album: {
